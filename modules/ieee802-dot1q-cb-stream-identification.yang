@@ -1,0 +1,429 @@
+module ieee802-dot1q-cb-stream-identification {
+  namespace urn:ieee:std:802.1Q:yang:ieee802-dot1q-stream-id;
+
+  prefix "stream-id";
+  import ieee802-types {
+    prefix ieee;
+  }
+
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import ieee802-dot1q-bridge {
+    prefix dot1q;
+  }
+
+  revision 2019-05-20 {
+    description "release with OpenIL-v1.6";
+  }
+  augment
+    "/dot1q:bridges"+
+    "/dot1q:bridge"+
+    "/dot1q:component" {
+    description
+      "Augment the Bridge component Stream identification";
+      container streams{
+        list stream-identity-table{
+          key "index";
+          leaf index {
+            type uint32;
+            mandatory true;
+          }
+          leaf stream-handle {
+            type uint32;
+            mandatory true;
+            description
+              "The The objects in a given entry of the Stream identity
+              table are used to control packets whose stream_handle
+              subparameter is equal to the entry’s tsnStreamIdHandle
+              object.";
+          }
+	  leaf stream-id-enabled {
+	    type boolean;
+            mandatory true;
+	    description
+	      "specify whether this entry was enabled.";
+	  }
+          leaf in-facing-output-port-list {
+            type uint32;
+            description
+              "The list of ports on which an in-facing Stream Identification
+              function using this identification method is to be placed for this
+              Stream in the output (towards the system forwarding function)
+              direction. At most one tsnStreamIdEntry can list a given port for a
+              given tsnStreamIdIdentifier in its  tsnStreamIdInFacOutputPortList.";
+          }
+          leaf out-facing-output-port-list {
+            type uint32;
+            description
+              "The list of ports on which an out-facing Stream Identification
+              function using this identification method is to be placed for this
+              Stream in the output (towards the system forwarding function)
+              direction.";
+          }
+          leaf in-facing-input-port-list {
+            type uint32;
+            description
+              "The list of ports on which an out-facing Stream Identification
+              function using this identification method is to be placed for this
+              Stream in the output (towards the system forwarding function)
+              direction.";
+          }
+          leaf out-facing-input-port-list {
+            type uint32;
+            description
+              "The list of ports on which an out-facing Stream Identification
+              function using this identification method is to be placed for this
+              Stream in the output (towards the system forwarding function)
+              direction.";
+          }
+          leaf identification-type {
+            mandatory true;
+            type enumeration {
+              enum null {
+                value 1;
+                description
+                  "Null Stream identification.";
+              }
+              enum source-mac-and-vlan {
+                value 2;
+                description
+                  "Source MAC and VLAN Stream identification.";
+              }
+              enum dest-mac-and-vlan {
+                value 3;
+                description
+                  "Destination MAC and VLAN  Stream identification.";
+              }
+              enum ip-octuple {
+                value 4;
+                description
+                  "IP octuple Stream identification.";
+              }
+            }
+            description
+              "The list of ports on which an out-facing Stream Identification
+              function using this identification method is to be placed for this
+              Stream in the output (towards the system forwarding function)
+              direction.";
+          }
+          leaf autoconfigured {
+            type boolean;
+            config false;
+            description
+              "A read-only Boolean value, supplied by the system, specifying
+              whether this entry was created explicitly(False) or via the
+              Sequence autoconfiguration table (9.2.3, True).";
+          }
+          leaf lan-path-id {
+            type uint32;
+            description
+              "An integer specifying a path or LAN.";
+          }
+          container parameters {
+            container null-stream-identification-params {
+              when "../../identification-type = 'null'" {
+                description
+                  "Applies to the Null Stream identification";
+              }
+              leaf dest-address {
+                type ieee:mac-address;
+                mandatory true;
+                description
+                  "Specifies the destination_address that identifies a packet in an
+                  Enhanced Internal Sublayer Service (EISS) indication primitive,
+                  to the Null Stream identification function.";
+              }
+              leaf vlan-tagged {
+                type enumeration {
+                  enum tagged {
+                    description
+                      "A frame must have a VLAN tag to be recognized as belonging
+                      to the Stream.";
+                  }
+                  enum priority {
+                    description
+                      "A frame must be untagged, or have a VLAN tag with a VLAN ID = 0
+                      to be recognized as belonging to the Stream.";
+                  }
+                  enum all {
+                    description
+                      "A frame is recognized as belonging to the Stream whether
+                      tagged or not.";
+                  }
+                }
+                description
+                  "An enumerated value indicating whether a packet in an EISS indication
+                  primitive to the Source MAC and VLAN Stream identification function is
+                  permitted to have a VLAN tag.";
+              }
+              leaf vlan-id {
+                type uint16;
+                mandatory true;
+                description
+                  "Specifies the vlan_identifier parameter that identifies a packet
+                  in an EISS indication primitive to the Source MAC and VLAN Stream
+                  identification function. A value of 0 indicates that the
+                  vlan_identifier parameter is ignored on EISS indication primitives.";
+              }
+            }
+            container source-mac-and-vlan-identification-params {
+              when "../../identification-type = 'source-mac-and-vlan'" {
+                description
+                  "Applies to the Source MAC and VLAN Stream identification";
+              }
+              leaf source-address {
+                type ieee:mac-address;
+                mandatory true;
+                description
+                  "Specifies the source_address that identifies a packet in an
+                  Enhanced Internal Sublayer Service (EISS) indication primitive,
+                  to the Source MAC and VLAN Stream identification function.";
+              }
+              leaf vlan-tagged {
+                type enumeration {
+                  enum tagged {
+                    description
+                      "A frame must have a VLAN tag to be recognized as belonging
+                      to the Stream.";
+                  }
+                  enum priority {
+                    description
+                      "A frame must be untagged, or have a VLAN tag with a VLAN ID = 0
+                      to be recognized as belonging to the Stream.";
+                  }
+                  enum all {
+                    description
+                      "A frame is recognized as belonging to the Stream whether
+                      tagged or not.";
+                  }
+                }
+                  mandatory true;
+                  description
+                    "An enumerated value indicating whether a packet in an EISS indication
+                    primitive to the Source MAC and VLAN Stream identification function is
+                    permitted to have a VLAN tag.";
+              }
+              leaf vlan-id {
+                type uint16;
+                mandatory true;
+                description
+                  "Specifies the vlan_identifier parameter that identifies a packet
+                  in an EISS indication primitive to the Source MAC and VLAN Stream
+                  identification function. A value of 0 indicates that the
+                  vlan_identifier parameter is ignored on EISS indication primitives.";
+              }
+            }
+            container dest-mac-and-vlan-identification-params {
+              when "../../identification-type = 'dest-mac-and-vlan'" {
+                description
+                  "Applies to the destination MAC and VLAN Stream identification";
+              }
+              leaf down-dest-address {
+                type ieee:mac-address;
+                mandatory true;
+                description
+                  "Specifies the destination_address to use in the EISS request primitive
+                  for output packets sent to lower layers by the Destination MAC and VLAN
+                  Stream identification, and the destination_address that identifies an
+                  input packet in an EISS indication primitive to the Null Stream
+                  identification function.";
+              }
+              leaf down-vlan-tagged {
+                type enumeration {
+                  enum tagged {
+                    description
+                      "A frame must have a VLAN tag to be recognized as belonging
+                      to the Stream.";
+                  }
+                  enum priority {
+                    description
+                      "A frame must be untagged, or have a VLAN tag with a VLAN ID = 0
+                      to be recognized as belonging to the Stream.";
+                  }
+                  enum all {
+                    description
+                      "A frame is recognized as belonging to the Stream whether
+                      tagged or not.";
+                  }
+                }
+                  mandatory true;
+                  description
+                    "An enumerated value indicating whether a packet in an EISS indication
+                    primitive to the Source MAC and VLAN Stream identification function is
+                    permitted to have a VLAN tag.";
+              }
+              leaf down-vlan-id {
+                type uint16;
+                mandatory true;
+                description
+                  "Specifies the vlan_identifier parameter that identifies a packet
+                  in an EISS indication primitive to the Source MAC and VLAN Stream
+                  identification function. A value of 0 indicates that the
+                  vlan_identifier parameter is ignored on EISS indication primitives.";
+              }
+              leaf down-priority {
+                type uint8;
+                mandatory true;
+                description
+                  "Specifies the priority parameter to use in the EISS request primitive
+                  for output packets sent to lower layers by the Destination MAC and VLAN
+                  Stream identification function for all packets in a particular Stream.";
+              }
+              leaf up-dest-address {
+                type ieee:mac-address;
+                mandatory true;
+                description
+                  "Specifies the destination_address parameter to use in the EISS indication
+                  primitive for input packets offered to upper layers by the Destination MAC
+                  and VLAN Stream identification layer. This address replaces the address
+                  that was used to identify the packet (tsnCpeDmacVlanDownDestMac, 9.3.4.1).";
+              }
+              leaf up-vlan-id {
+                type uint16;
+                mandatory true;
+                description
+                  "Specifies the vlan_identifier parameter to use in the EISS indication
+                  primitive for packets offered to upper layers, or the VLAN ID field
+                  for an IEEE 802.1Q tag in an ISS mac_service_data_unit. This address
+                  replaces the VLAN ID that was used to identify the packet
+                  (tsnCpeDmacVlanDownVlan, 9.3.4.3).";
+              }
+              leaf up-priority {
+                type uint8;
+                mandatory true;
+                description
+                  "Specifies the priority parameter to use in the EISS indication
+                  primitive for packets offered to upper layers.";
+              }
+            }
+            container ip-octuple-stream-identification-params {
+              when "../../identification-type = 'ip-octuple'" {
+                description
+                  "Applies to the IP octuple Stream identification";
+              }
+              leaf dest-address {
+                type ieee:mac-address;
+                mandatory true;
+                description
+                  "Specifies the destination_address parameter that identifies a
+                  packet in an EISS indication primitive.";
+              }
+              leaf down-vlan-tagged {
+                type enumeration {
+                  enum tagged {
+                    description
+                      "A frame must have a VLAN tag to be recognized as belonging
+                      to the Stream.";
+                  }
+                  enum priority {
+                    description
+                      "A frame must be untagged, or have a VLAN tag with a VLAN ID = 0
+                      to be recognized as belonging to the Stream.";
+                  }
+                  enum all {
+                    description
+                      "A frame is recognized as belonging to the Stream whether
+                      tagged or not.";
+                  }
+                }
+                  mandatory true;
+                  description
+                    "An enumerated value indicating whether a packet in an EISS indication
+                    or request primitive to the IP octuple Stream identification function
+                    is to have a VLAN tag.";
+              }
+              leaf vlan-id {
+                type uint16;
+                mandatory true;
+                description
+                  "Specifies the vlan_identifier parameter that identifies a packet
+                  in an EISS indication primitive. A value of 0 indicates that the
+                  frame is not to have a VLAN tag.";
+              }
+              container source-ip-address {
+                leaf ip-version {
+                  type inet:ip-version;
+                  description
+                    "This value represents the version of the IP protocol.";
+                }
+                leaf ip-address {
+                  type inet:ip-address;
+                }
+                description
+                  "Specifies the IPv4 (RFC791) or IPv6 (RFC2460) destination address
+                  parameter that must be matched to identify packets coming up from
+                  lower layers.";
+              }
+              container dest-ip-address {
+                leaf ip-version {
+                  type inet:ip-version;
+                  description
+                    "This value represents the version of the IP protocol.";
+                }
+                leaf ip-address {
+                  type inet:ip-address;
+                }
+                description
+                  "Specifies the IPv4 (RFC791) or IPv6 (RFC2460) destination address
+                  parameter that must be matched to identify packets coming up from
+                  lower layers.";
+              }
+              leaf dscp {
+                type inet:dscp;
+                description
+                  "Specifies the IPv4 (RFC791) or IPv6 (RFC2460) differentiated
+		  services codepoint (DSCP, RFC2474) that must be matched to
+		  identify packets comingup from the lower layers. A value of
+		  64 decimal indicates that the DSCP is to be ignored on
+		  packets received from lower layers.";
+              }
+              leaf next-protocol {
+                type enumeration {
+                  enum UDP {
+                    description
+                      "UDP protocol.";
+                  }
+                  enum TCP {
+                    description
+                      "TCP protocol.";
+                  }
+                  enum SCTP {
+                    description
+                      "SCTP protocol.";
+                  }
+                  enum none {
+                    description
+                      "none.";
+                  }
+                }
+                description
+                  "Specifies the IP next protocol parameter that must be matched to
+                  identify packets coming up from up lower layers. The value of this
+                  parameter must specify either none, UDP (RFC768), TCP (RFC793), or
+                  SCTP (RFC4960). If 'none', then the tsnCpeIpoctupleSourcePort
+                  (9.3.5.7) and tsnCpeIpoctupleDestinationPort (9.3.5.8) managed
+                  objects are not used.";
+              }
+              leaf source-port {
+                type uint16;
+                description
+                  "Specifies the TCP or UDP Source Port parameter that must be matched
+                  to identify packets coming up from lower layers. A value of 0
+                  indicates that the Source Port number of the packet is to be
+                  ignored on packets received from lower layers.";
+              }
+              leaf dest-port {
+                type uint16;
+                description
+                  "Specifies the TCP or UDP Destination Port parameter that must be
+                  matched to identify packets coming up from lower layers. A value of 0
+                  indicates that the Destination Port number of the packet is to be
+                  ignored on packets received from lower layers.";
+              }
+            }
+          }
+        }
+      }
+    }
+}

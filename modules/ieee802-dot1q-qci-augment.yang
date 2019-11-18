@@ -1,0 +1,47 @@
+module ieee802-dot1q-qci-augment {
+  namespace urn:ieee:std:802.1Q:yang:ieee802-dot1q-qci-augment;
+
+  prefix "qci-augment";
+
+  import ieee802-dot1q-bridge {
+    prefix dot1q;
+  }
+  import ieee802-dot1q-psfp {
+    prefix psfp;
+  }
+  import ieee802-dot1q-stream-filters-gates {
+    prefix sfsg;
+  }
+
+  revision 2019-05-20 {
+    description "release with OpenIL-v1.6";
+  }
+  augment
+    "/dot1q:bridges"+
+    "/dot1q:bridge"+
+    "/dot1q:component"+
+    "/sfsg:stream-filters"+
+    "/sfsg:stream-filter-instance-table" {
+    description
+      "Augment the stream filter instance table parameters";
+      leaf stream-filter-enabled {
+	type boolean;
+        description
+          "specifying whether this entry was enabled.";
+      }
+    }
+  augment
+    "/dot1q:bridges"+
+    "/dot1q:bridge"+
+    "/dot1q:component"+
+    "/psfp:flow-meters"+
+    "/psfp:flow-meter-instance-table" {
+    description
+      "Augment the stream filter instance table parameters";
+      leaf flow-meter-enabled {
+	type boolean;
+        description
+          "specifying whether this entry was enabled.";
+      }
+    }
+}
