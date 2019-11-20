@@ -30,6 +30,7 @@
 #include "main.h"
 #include "qbv.h"
 #include "qbu.h"
+#include "file_mon.h"
 
 static uint8_t exit_application;
 
@@ -44,6 +45,23 @@ static void sigint_handler(int signum)
 	exit_application = 1;
 }
 
+/* tsn_operation_monitor_cb()
+ * file callback
+ */
+void tsn_operation_monitor_cb(void)
+{
+}
+
+struct sr_tsn_callback file_clbks = {
+	.callbacks_count = 1,
+	.callbacks = {
+		{
+			.f_path = "/tmp/tsn-oper-record.json",
+			.func = tsn_operation_monitor_cb
+		},
+	}
+};
+
 int main(int argc, char **argv)
 {
 	int rc = SR_ERR_OK;
@@ -54,6 +72,9 @@ int main(int argc, char **argv)
 	sr_subscr_options_t opts;
 
 	exit_application = 0;
+
+	/* Init file callbacks */
+	sr_tsn_fcb_init();
 
 	/* Init tsn mutex */
 	init_tsn_mutex();

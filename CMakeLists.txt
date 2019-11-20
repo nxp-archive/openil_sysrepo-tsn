@@ -33,11 +33,16 @@ find_package(SYSREPO REQUIRED)
 include_directories(${SYSREPO_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${SYSREPO_LIBRARIES})
 
+# dependencies - pthread
+find_package(Threads)
+set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+
 set(SOURCES
 		src/main.c
 		src/common.c
 		src/qbv.c
-		src/qbu.c)
+		src/qbu.c
+		src/file_mon.c)
 
 find_package(PkgConfig)
 

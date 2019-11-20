@@ -1,7 +1,7 @@
 /**
- * @file main.h
+ * @file file_mon.h
  * @author Xiaolin He
- * @brief header file for main.c.
+ * @brief header file for file_mon.c.
  *
  * Copyright 2019 NXP
  *
@@ -18,11 +18,29 @@
  * limitations under the License.
  */
 
-#ifndef __MAIN_H_
-#define __MAIN_H_
+#ifndef __FILE_MON_H_
+#define __FILE_MON_H_
 
-#define IF_XPATH "/ietf-interfaces:interfaces/interface"
+#define FMON_FLAG_MODIFIED	0x01
+#define FMON_FLAG_IGNORED	0x02
+#define FMON_FLAG_UPDATE	0x04
 
-extern struct sr_tsn_callback file_clbks;
+#define INOT_NAME_MAX		50
+#define MAX_FILE_PATH_LEN	100
+
+struct sr_tsn_callback {
+	int callbacks_count;
+	struct {
+		const char *f_path;
+		void (*func)(void);
+	} callbacks[];
+};
+
+struct file_mon {
+	int wd;
+	char flags;
+};
+
+int sr_tsn_fcb_init(void);
 
 #endif
