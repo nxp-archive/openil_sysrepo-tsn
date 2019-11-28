@@ -54,3 +54,13 @@ install_yang_module ieee802-dot1q-sched
 enable_yang_module_feature ieee802-dot1q-sched scheduled-traffic
 
 install_yang_module iana-if-type@2017-01-19
+
+install_yang_module ieee802-dot1q-bridge
+install_yang_module ietf-yang-types
+install_yang_module ieee802-types
+install_yang_module ietf-inet-types@2013-07-15
+install_yang_module ieee802-dot1q-stream-filters-gates
+enable_yang_module_feature ieee802-dot1q-stream-filters-gates closed-gate-state
+install_yang_module ieee802-dot1q-psfp
+install_yang_module ieee802-dot1q-cb-stream-identification
+install_yang_module ieee802-dot1q-qci-augment

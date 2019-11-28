@@ -180,3 +180,115 @@ void print_ev_type(sr_notif_event_t event)
 		break;
 	}
 }
+
+int str_to_num(int type, char *str, uint64_t *num)
+{
+	char *char_ptr;
+	char ch;
+	int len;
+	int base = 0;
+	int i;
+
+	char_ptr = str;
+	len = strlen(str);
+	if ((strncmp(str, "0x", 2) == 0) || (strncmp(str, "0X", 2) == 0)) {
+		char_ptr += 2;
+		for (i = 2; i < len; i++) {
+			ch = *char_ptr;
+			if ((ch < '0') || ((ch > '9') && (ch < 'A')) ||
+			    ((ch > 'F') && (ch < 'a')) || (ch > 'f'))
+				goto err;
+
+			char_ptr++;
+		}
+		base = 16;
+		goto convert;
+	}
+
+	char_ptr = str;
+	char_ptr += len - 1;
+	ch = *char_ptr;
+	if ((ch == 'b') || (ch == 'B')) {
+		char_ptr = str;
+		for (i = 0; i < len - 1; i++) {
+			ch = *char_ptr;
+			if ((ch < '0') || (ch > '1'))
+				goto err;
+
+			char_ptr++;
+		}
+		base = 2;
+		goto convert;
+	}
+
+	char_ptr = str;
+	if (*char_ptr == '0') {
+		char_ptr++;
+		for (i = 1; i < len; i++) {
+			ch = *char_ptr;
+			if ((ch < '0') || (ch > '7'))
+				goto err;
+
+			char_ptr++;
+		}
+		base = 8;
+		goto convert;
+	}
+
+	char_ptr = str;
+	for (i = 0; i < len; i++) {
+		ch = *char_ptr;
+		if ((ch < '0') || (ch > '9'))
+			goto err;
+
+		char_ptr++;
+	}
+	base = 10;
+
+convert:
+	errno = 0;
+	*num = strtoul(str, NULL, base);
+	if (errno == ERANGE)
+		goto err;
+	// check type limit
+	switch (type) {
+	case NUM_TYPE_S8:
+		if ((*num < -127) || (*num > 127))
+			goto err;
+		break;
+	case NUM_TYPE_U8:
+		if (*num > 255)
+			goto err;
+		break;
+	case NUM_TYPE_S16:
+		if ((*num < -32767) || (*num > 32767))
+			goto err;
+		break;
+	case NUM_TYPE_U16:
+		if (*num > 65535)
+			goto err;
+		break;
+	case NUM_TYPE_S32:
+		if ((*num < -2147483647) || (*num > 2147483647))
+			goto err;
+		break;
+	case NUM_TYPE_U32:
+		if (*num > 4294967295)
+			goto err;
+		break;
+	case NUM_TYPE_S64:
+		if ((*num < -9223372036854775807) ||
+		    (*num > 9223372036854775807))
+			goto err;
+		break;
+	case NUM_TYPE_U64:
+		if (*num > 0xFFFFFFFFFFFFFFFF)
+			goto err;
+		break;
+	default:
+		goto err;
+	}
+	return SR_ERR_OK;
+err:
+	return SR_ERR_INVAL_ARG;
+}

@@ -78,7 +78,6 @@ module ieee802-dot1q-cb-stream-identification {
               direction.";
           }
           leaf identification-type {
-            mandatory true;
             type enumeration {
               enum null {
                 value 1;
@@ -128,7 +127,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf dest-address {
                 type ieee:mac-address;
-                mandatory true;
                 description
                   "Specifies the destination_address that identifies a packet in an
                   Enhanced Internal Sublayer Service (EISS) indication primitive,
@@ -159,7 +157,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf vlan-id {
                 type uint16;
-                mandatory true;
                 description
                   "Specifies the vlan_identifier parameter that identifies a packet
                   in an EISS indication primitive to the Source MAC and VLAN Stream
@@ -174,7 +171,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf source-address {
                 type ieee:mac-address;
-                mandatory true;
                 description
                   "Specifies the source_address that identifies a packet in an
                   Enhanced Internal Sublayer Service (EISS) indication primitive,
@@ -198,7 +194,6 @@ module ieee802-dot1q-cb-stream-identification {
                       tagged or not.";
                   }
                 }
-                  mandatory true;
                   description
                     "An enumerated value indicating whether a packet in an EISS indication
                     primitive to the Source MAC and VLAN Stream identification function is
@@ -206,7 +201,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf vlan-id {
                 type uint16;
-                mandatory true;
                 description
                   "Specifies the vlan_identifier parameter that identifies a packet
                   in an EISS indication primitive to the Source MAC and VLAN Stream
@@ -221,7 +215,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf down-dest-address {
                 type ieee:mac-address;
-                mandatory true;
                 description
                   "Specifies the destination_address to use in the EISS request primitive
                   for output packets sent to lower layers by the Destination MAC and VLAN
@@ -247,7 +240,6 @@ module ieee802-dot1q-cb-stream-identification {
                       tagged or not.";
                   }
                 }
-                  mandatory true;
                   description
                     "An enumerated value indicating whether a packet in an EISS indication
                     primitive to the Source MAC and VLAN Stream identification function is
@@ -255,7 +247,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf down-vlan-id {
                 type uint16;
-                mandatory true;
                 description
                   "Specifies the vlan_identifier parameter that identifies a packet
                   in an EISS indication primitive to the Source MAC and VLAN Stream
@@ -264,7 +255,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf down-priority {
                 type uint8;
-                mandatory true;
                 description
                   "Specifies the priority parameter to use in the EISS request primitive
                   for output packets sent to lower layers by the Destination MAC and VLAN
@@ -272,7 +262,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf up-dest-address {
                 type ieee:mac-address;
-                mandatory true;
                 description
                   "Specifies the destination_address parameter to use in the EISS indication
                   primitive for input packets offered to upper layers by the Destination MAC
@@ -281,7 +270,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf up-vlan-id {
                 type uint16;
-                mandatory true;
                 description
                   "Specifies the vlan_identifier parameter to use in the EISS indication
                   primitive for packets offered to upper layers, or the VLAN ID field
@@ -291,7 +279,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf up-priority {
                 type uint8;
-                mandatory true;
                 description
                   "Specifies the priority parameter to use in the EISS indication
                   primitive for packets offered to upper layers.";
@@ -304,7 +291,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf dest-address {
                 type ieee:mac-address;
-                mandatory true;
                 description
                   "Specifies the destination_address parameter that identifies a
                   packet in an EISS indication primitive.";
@@ -327,7 +313,6 @@ module ieee802-dot1q-cb-stream-identification {
                       tagged or not.";
                   }
                 }
-                  mandatory true;
                   description
                     "An enumerated value indicating whether a packet in an EISS indication
                     or request primitive to the IP octuple Stream identification function
@@ -335,7 +320,6 @@ module ieee802-dot1q-cb-stream-identification {
               }
               leaf vlan-id {
                 type uint16;
-                mandatory true;
                 description
                   "Specifies the vlan_identifier parameter that identifies a packet
                   in an EISS indication primitive. A value of 0 indicates that the

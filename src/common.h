@@ -35,6 +35,17 @@
 #include <tsn/genl_tsn.h> /* must ensure no stdbool.h was included before */
 #include <linux/tsn.h>
 
+enum num_type {
+	NUM_TYPE_S8 =  0x1,
+	NUM_TYPE_U8 =  0x2,
+	NUM_TYPE_S16 =  0x3,
+	NUM_TYPE_U16 =  0x4,
+	NUM_TYPE_S32 =  0x5,
+	NUM_TYPE_U32 =  0x6,
+	NUM_TYPE_S64 =  0x7,
+	NUM_TYPE_U64 =  0x8,
+};
+
 struct cycle_time_s {
 	uint64_t numerator;
 	uint64_t denominator;
@@ -56,5 +67,5 @@ uint64_t cal_base_time(struct base_time_s *basetime);
 uint64_t cal_cycle_time(struct cycle_time_s *cycletime);
 void print_ev_type(sr_notif_event_t event);
 void print_subtree_changes(sr_session_ctx_t *session, const char *path);
-
+int str_to_num(int type, char *str, uint64_t *num);
 #endif

@@ -22,6 +22,8 @@
 #define __MAIN_H_
 
 #define IF_XPATH "/ietf-interfaces:interfaces/interface"
+#define BRIDGE_XPATH "/ieee802-dot1q-bridge:bridges/bridge"
+#define BRIDGE_COMPONENT_XPATH (BRIDGE_XPATH "/component")
 
 extern struct sr_tsn_callback file_clbks;
 
