@@ -46,6 +46,7 @@ set(SOURCES
 		src/qci.c
 		src/qci_sf.c
 		src/qci_sg.c
+		src/qci_fm.c
 		src/file_mon.c)
 
 find_package(PkgConfig)

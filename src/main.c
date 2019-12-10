@@ -180,6 +180,14 @@ int main(int argc, char **argv)
 					 qci_sg_subtree_change_cb,
 					 NULL, 0, opts, &bridge_subscription);
 
+	/* Subscribe to QCI-Flow-Meter subtree */
+	snprintf(path, XPATH_MAX_LEN, BRIDGE_COMPONENT_XPATH);
+	strncat(path, QCIFM_XPATH, XPATH_MAX_LEN);
+	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+	rc = sr_subtree_change_subscribe(session, path,
+					 qci_fm_subtree_change_cb,
+					 NULL, 0, opts, &bridge_subscription);
+
 	if (rc != SR_ERR_OK) {
 		fprintf(stderr, "Error by sr_module_change_subscribe: %s\n",
 			sr_strerror(rc));
