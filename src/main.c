@@ -25,6 +25,9 @@
 #include <signal.h>
 #include <inttypes.h>
 #include <cjson/cJSON.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "common.h"
 #include "main.h"
@@ -64,6 +67,43 @@ struct sr_tsn_callback file_clbks = {
 	}
 };
 
+void check_pid_file(void)
+{
+	char pid_file[] = "/var/run/sysrepo-tsn.pid";
+	char str[20] = { 0 };
+	int ret = 0;
+	int fd;
+
+	/* open PID file */
+	fd = open(pid_file, O_RDWR | O_CREAT, 0640);
+	if (fd < 0) {
+		printf("Unable to open sysrepo PID file '%s': %s.\n",
+		       pid_file, strerror(errno));
+		exit(1);
+	}
+
+	/* acquire lock on the PID file */
+	if (lockf(fd, F_TLOCK, 0) < 0) {
+		if (EACCES == errno || EAGAIN == errno) {
+			printf("Another instance of sysrepo-tsn %s\n",
+			       "daemon is running, unable to start.");
+		} else {
+			printf("Unable to lock sysrepo PID file '%s': %s.",
+			       pid_file, strerror(errno));
+		}
+		exit(1);
+	}
+
+	/* write PID into the PID file */
+	snprintf(str, 20, "%d\n", getpid());
+	ret = write(fd, str, strlen(str));
+	if (-1 == ret) {
+		printf("ERR: Unable to write into sysrepo PID file '%s': %s.",
+		       pid_file, strerror(errno));
+		exit(1);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int rc = SR_ERR_OK;
@@ -75,6 +115,9 @@ int main(int argc, char **argv)
 	sr_subscr_options_t opts;
 
 	exit_application = 0;
+
+	/* Check pid file */
+	check_pid_file();
 
 	/* Init file callbacks */
 	sr_tsn_fcb_init();
@@ -194,6 +237,7 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
+
 	/* Loop until ctrl-c is pressed / SIGINT is received */
 	signal(SIGINT, sigint_handler);
 	signal(SIGPIPE, SIG_IGN);
@@ -210,5 +254,6 @@ cleanup:
 		sr_session_stop(session);
 	if (connection)
 		sr_disconnect(connection);
+
 	return rc;
 }
