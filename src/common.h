@@ -35,6 +35,14 @@
 #include <tsn/genl_tsn.h> /* must ensure no stdbool.h was included before */
 #include <linux/tsn.h>
 
+enum apply_status {
+	APPLY_NONE = 0,
+	APPLY_PARSE_SUC,
+	APPLY_PARSE_ERR,
+	APPLY_SET_SUC,
+	APPLY_SET_ERR,
+};
+
 enum num_type {
 	NUM_TYPE_S8 =  0x1,
 	NUM_TYPE_U8 =  0x2,
@@ -68,4 +76,6 @@ uint64_t cal_cycle_time(struct cycle_time_s *cycletime);
 void print_ev_type(sr_notif_event_t event);
 void print_subtree_changes(sr_session_ctx_t *session, const char *path);
 int str_to_num(int type, char *str, uint64_t *num);
+void pri2num(char *pri_str, int8_t *pri_num);
+bool is_del_oper(sr_session_ctx_t *session, char *path);
 #endif

@@ -32,6 +32,7 @@
 #include "qbu.h"
 #include "file_mon.h"
 #include "cb_streamid.h"
+#include "qci.h"
 
 static uint8_t exit_application;
 
@@ -161,6 +162,14 @@ int main(int argc, char **argv)
 	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
 	rc = sr_subtree_change_subscribe(session, path,
 					 cb_streamid_subtree_change_cb,
+					 NULL, 0, opts, &bridge_subscription);
+
+	/* Subscribe to QCI-Stream-Filter subtree */
+	snprintf(path, XPATH_MAX_LEN, BRIDGE_COMPONENT_XPATH);
+	strncat(path, QCISF_XPATH, XPATH_MAX_LEN);
+	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+	rc = sr_subtree_change_subscribe(session, path,
+					 qci_sf_subtree_change_cb,
 					 NULL, 0, opts, &bridge_subscription);
 
 	if (rc != SR_ERR_OK) {

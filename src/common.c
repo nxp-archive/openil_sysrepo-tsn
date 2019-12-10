@@ -292,3 +292,57 @@ convert:
 err:
 	return SR_ERR_INVAL_ARG;
 }
+
+void pri2num(char *pri_str, int8_t *pri_num)
+{
+	if (!pri_str || !pri_num)
+		return;
+
+	if (!strcmp(pri_str, "zero"))
+		*pri_num = 0;
+	else if (!strcmp(pri_str, "one"))
+		*pri_num = 1;
+	else if (!strcmp(pri_str, "two"))
+		*pri_num = 2;
+	else if (!strcmp(pri_str, "three"))
+		*pri_num = 3;
+	else if (!strcmp(pri_str, "four"))
+		*pri_num = 4;
+	else if (!strcmp(pri_str, "five"))
+		*pri_num = 5;
+	else if (!strcmp(pri_str, "six"))
+		*pri_num = 6;
+	else if (!strcmp(pri_str, "seven"))
+		*pri_num = 7;
+	else if (!strcmp(pri_str, "wildcard"))
+		*pri_num = -1;
+	else
+		*pri_num = -1;
+}
+
+bool is_del_oper(sr_session_ctx_t *session, char *path)
+{
+	int rc = SR_ERR_OK;
+	bool ret = false;
+	sr_change_oper_t oper;
+	sr_val_t *old_value;
+	sr_val_t *new_value;
+	sr_change_iter_t *it;
+	char err_msg[MSG_MAX_LEN] = {0};
+
+	rc = sr_get_changes_iter(session, path, &it);
+	if (rc != SR_ERR_OK) {
+		snprintf(err_msg, MSG_MAX_LEN, "Get changes from %s failed",
+			 path);
+		sr_set_error(session, err_msg, path);
+		printf("ERROR: Get changes from %s failed\n", path);
+		return false;
+	}
+
+	rc = sr_get_change_next(session, it, &oper, &old_value, &new_value);
+	if (rc == SR_ERR_NOT_FOUND)
+		ret = false;
+	else if (oper == SR_OP_DELETED)
+		ret = true;
+	return ret;
+}
