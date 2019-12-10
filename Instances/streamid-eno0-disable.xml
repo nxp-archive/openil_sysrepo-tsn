@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bridges xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"
+	 xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"
+	 xmlns:stream="urn:ieee:std:802.1Q:yang:ieee802-dot1q-stream-id">
+	<bridge>
+                <name>enetc</name>
+		<address>00-00-00-00-00-01</address>
+		<bridge-type>provider-edge-bridge</bridge-type>
+                <component>
+                    <name>eno0</name>
+		    <type>edge-relay-component</type>
+                    <stream:streams>
+                        <stream:stream-identity-table>
+                            <stream:index>1</stream:index>
+                            <stream:stream-id-enabled>false</stream:stream-id-enabled>
+                            <stream:stream-handle>1</stream:stream-handle>
+                            <stream:identification-type nc:operation="delete">null</stream:identification-type>
+                            <stream:parameters nc:operation="delete">
+                            </stream:parameters>
+                        </stream:stream-identity-table>
+                        <stream:stream-identity-table>
+                            <stream:index>3</stream:index>
+                            <stream:stream-id-enabled>false</stream:stream-id-enabled>
+                            <stream:stream-handle>100</stream:stream-handle>
+                            <stream:identification-type nc:operation="delete">source-mac-and-vlan</stream:identification-type>
+                            <stream:parameters nc:operation="delete">
+                            </stream:parameters>
+                        </stream:stream-identity-table>
+                    </stream:streams>
+                </component>
+	</bridge>
+</bridges>

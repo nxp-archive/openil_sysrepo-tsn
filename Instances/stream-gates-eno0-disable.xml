@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<bridges xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"
+	 xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"
+	 xmlns:sfsg="urn:ieee:std:802.1Q:yang:ieee802-dot1q-stream-filters-gates"
+	 xmlns:psfp="urn:ieee:std:802.1Q:yang:ieee802-dot1q-psfp"
+	 xmlns:qci-augment="urn:ieee:std:802.1Q:yang:ieee802-dot1q-qci-augment">
+	<bridge>
+		<name>enetc</name>
+		<bridge-type>provider-edge-bridge</bridge-type>
+		<address>00-00-00-00-00-01</address>
+		<component>
+			<name>eno0</name>
+			<type>edge-relay-component</type>
+			<sfsg:stream-gates>
+				<sfsg:stream-gate-instance-table>
+					<sfsg:stream-gate-instance-id>2</sfsg:stream-gate-instance-id>
+					<sfsg:gate-enable>false</sfsg:gate-enable>
+					<sfsg:admin-gate-states nc:operation="delete">open</sfsg:admin-gate-states>
+					<psfp:admin-control-list-length nc:operation="delete">2</psfp:admin-control-list-length>
+					<psfp:admin-control-list nc:operation="delete">
+						<psfp:index>0</psfp:index>
+					</psfp:admin-control-list>
+					<psfp:admin-control-list nc:operation="delete">
+						<psfp:index>1</psfp:index>
+					</psfp:admin-control-list>
+				</sfsg:stream-gate-instance-table>
+			</sfsg:stream-gates>
+		</component>
+	</bridge>
+</bridges>

@@ -1,0 +1,27 @@
+<bridges xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"
+         xmlns:sfsg="urn:ieee:std:802.1Q:yang:ieee802-dot1q-stream-filters-gates"
+	 xmlns:psfp="urn:ieee:std:802.1Q:yang:ieee802-dot1q-psfp"
+	 xmlns:qci-augment="urn:ieee:std:802.1Q:yang:ieee802-dot1q-qci-augment">
+	<bridge>
+		<name>switch</name>
+		<bridge-type>provider-edge-bridge</bridge-type>
+		<address>00-00-00-00-00-02</address>
+		<component>
+		    <name>swp0</name>
+		    <type>edge-relay-component</type>
+		    <psfp:flow-meters>
+			<psfp:flow-meter-instance-table>
+			    <psfp:flow-meter-instance-id>68</psfp:flow-meter-instance-id>
+			    <qci-augment:flow-meter-enabled>true</qci-augment:flow-meter-enabled>
+			    <psfp:committed-information-rate>100000000</psfp:committed-information-rate>
+			    <psfp:committed-burst-size>4000</psfp:committed-burst-size>
+			    <psfp:excess-information-rate>100000000</psfp:excess-information-rate>
+			    <psfp:excess-burst-size>4000</psfp:excess-burst-size>
+			    <psfp:coupling-flag>one</psfp:coupling-flag>
+			    <psfp:color-mode>color-blind</psfp:color-mode>
+			    <psfp:drop-on-yellow>false</psfp:drop-on-yellow>
+			</psfp:flow-meter-instance-table>
+		    </psfp:flow-meters>
+		</component>
+	</bridge>
+</bridges>

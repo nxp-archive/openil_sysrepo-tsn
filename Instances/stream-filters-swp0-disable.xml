@@ -1,0 +1,28 @@
+<bridges xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"
+	 xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"
+         xmlns:sfsg="urn:ieee:std:802.1Q:yang:ieee802-dot1q-stream-filters-gates"
+         xmlns:psfp="urn:ieee:std:802.1Q:yang:ieee802-dot1q-psfp"
+	 xmlns:qci-augment="urn:ieee:std:802.1Q:yang:ieee802-dot1q-qci-augment">
+	<bridge>
+		<name>switch</name>
+		<bridge-type>provider-edge-bridge</bridge-type>
+		<address>00-00-00-00-00-02</address>
+		<component>
+		    <name>swp0</name>
+		    <type>edge-relay-component</type>
+		    <sfsg:stream-filters>
+			<sfsg:stream-filter-instance-table>
+			    <sfsg:stream-filter-instance-id>1</sfsg:stream-filter-instance-id>
+			    <sfsg:stream-handle>1</sfsg:stream-handle>
+			    <qci-augment:stream-filter-enabled>true</qci-augment:stream-filter-enabled>
+			    <sfsg:filter-specification-list nc:operation="delete">
+				<sfsg:index>0</sfsg:index>
+			    </sfsg:filter-specification-list>
+			    <sfsg:filter-specification-list nc:operation="delete">
+				<sfsg:index>1</sfsg:index>
+			    </sfsg:filter-specification-list>
+			</sfsg:stream-filter-instance-table>
+		    </sfsg:stream-filters>
+		</component>
+	</bridge>
+</bridges>

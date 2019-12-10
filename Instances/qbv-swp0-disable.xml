@@ -1,0 +1,29 @@
+<interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces"
+	    xmlns:sched="urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched"
+	    xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"
+	    xmlns:preempt="urn:ieee:std:802.1Q:yang:ieee802-dot1q-preemption">
+	<interface>
+		<name>swp0</name>
+		<enabled>true</enabled>
+		<type xmlns:ianaift="urn:ietf:params:xml:ns:yang:iana-if-type">ianaift:ethernetCsmacd</type>
+		<sched:max-sdu-table>
+			<sched:traffic-class>0</sched:traffic-class>
+			<sched:queue-max-sdu>1024</sched:queue-max-sdu>
+		</sched:max-sdu-table>
+		<sched:gate-parameters>
+			<sched:gate-enabled>false</sched:gate-enabled>
+			<sched:admin-gate-states  nc:operation="delete">127</sched:admin-gate-states>
+			<sched:config-change  nc:operation="delete">true</sched:config-change>
+			<sched:admin-control-list-length  nc:operation="delete">3</sched:admin-control-list-length>
+			<sched:admin-control-list  nc:operation="delete">
+				<sched:index>0</sched:index>
+			</sched:admin-control-list>
+			<sched:admin-control-list  nc:operation="delete">
+				<sched:index>1</sched:index>
+			</sched:admin-control-list>
+			<sched:admin-control-list  nc:operation="delete">
+				<sched:index>2</sched:index>
+			</sched:admin-control-list>
+		</sched:gate-parameters>
+	</interface>
+</interfaces>

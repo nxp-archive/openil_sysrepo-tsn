@@ -1,0 +1,21 @@
+<bridges xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"
+	 xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"
+         xmlns:sfsg="urn:ieee:std:802.1Q:yang:ieee802-dot1q-stream-filters-gates"
+	 xmlns:psfp="urn:ieee:std:802.1Q:yang:ieee802-dot1q-psfp"
+	 xmlns:qci-augment="urn:ieee:std:802.1Q:yang:ieee802-dot1q-qci-augment">
+	<bridge>
+		<name>enetc</name>
+		<bridge-type>provider-edge-bridge</bridge-type>
+		<address>00-00-00-00-00-01</address>
+		<component>
+		    <name>eno0</name>
+		    <type>edge-relay-component</type>
+		    <psfp:flow-meters>
+			<psfp:flow-meter-instance-table>
+			    <psfp:flow-meter-instance-id>1</psfp:flow-meter-instance-id>
+			    <qci-augment:flow-meter-enabled>true</qci-augment:flow-meter-enabled>
+			</psfp:flow-meter-instance-table>
+		    </psfp:flow-meters>
+		</component>
+	</bridge>
+</bridges>
