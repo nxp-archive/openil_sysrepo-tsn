@@ -3,7 +3,7 @@
  * @author Xiaolin He
  * @brief header file for common.c.
  *
- * Copyright 2019 NXP
+ * Copyright 2019-2020 NXP
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 #define XPATH_MAX_LEN		200
 #define IF_NAME_MAX_LEN		20
 #define NODE_NAME_MAX_LEN	80
-#define MSG_MAX_LEN		100
+#define MSG_MAX_LEN		400
 
 #include <sysrepo.h>
 #include <stdbool.h>
