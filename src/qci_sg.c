@@ -4,7 +4,7 @@
  * @brief Implementation of Stream Gate function based on sysrepo
  * datastore.
  *
- * Copyright 2019 NXP
+ * Copyright 2019-2020 NXP
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -295,7 +295,7 @@ int get_sg_per_port_per_id(sr_session_ctx_t *session, const char *path)
 		if ((!sg_id) || !strncmp(sg_id, sgid_bak, IF_NAME_MAX_LEN))
 			continue;
 
-		snprintf(sgid_bak, IF_NAME_MAX_LEN, sg_id);
+		snprintf(sgid_bak, IF_NAME_MAX_LEN, "%s", sg_id);
 
 		sgid = strtoul(sg_id, NULL, 0);
 		cpname = sr_xpath_key_value(value->xpath, "component",

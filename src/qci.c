@@ -4,7 +4,7 @@
  * @brief Implementation of Qci function based on sysrepo
  * datastore.
  *
- * Copyright 2019 NXP
+ * Copyright 2019-2020 NXP
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ void init_sf_list_node(struct std_qci_list *node, char *port, uint32_t sfid)
 	if (!node->sf_ptr)
 		return;
 
-	snprintf(node->sf_ptr->port, IF_NAME_MAX_LEN, port);
+	snprintf(node->sf_ptr->port, IF_NAME_MAX_LEN, "%s", port);
 	node->apply_st = APPLY_NONE;
 	node->sf_ptr->sfconf.stream_handle_spec = -1;
 	node->sf_ptr->sf_id = sfid;
@@ -51,7 +51,7 @@ void init_sg_list_node(struct std_qci_list *node, char *port, uint32_t sgid)
 	if (!node->sg_ptr)
 		return;
 
-	snprintf(node->fm_ptr->port, IF_NAME_MAX_LEN, port);
+	snprintf(node->fm_ptr->port, IF_NAME_MAX_LEN, "%s", port);
 	node->sg_ptr->sg_id = sgid;
 	node->sg_ptr->cycletime_f = false;
 	node->sg_ptr->basetime_f = false;
@@ -64,7 +64,7 @@ void init_fm_list_node(struct std_qci_list *node, char *port, uint32_t fmid)
 	if (!node->fm_ptr)
 		return;
 
-	snprintf(node->fm_ptr->port, IF_NAME_MAX_LEN, port);
+	snprintf(node->fm_ptr->port, IF_NAME_MAX_LEN, "%s", port);
 	node->fm_ptr->fm_id = fmid;
 }
 

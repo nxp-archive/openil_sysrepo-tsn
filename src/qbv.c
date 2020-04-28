@@ -3,7 +3,7 @@
  * @author Xiaolin He
  * @brief Application to configure TSN-QBV function based on sysrepo datastore.
  *
- * Copyright 2019 NXP
+ * Copyright 2019-2020 NXP
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -398,7 +398,7 @@ int qbv_config(sr_session_ctx_t *session, const char *path, bool abort)
 			continue;
 
 		if (strcmp(ifname, ifname_bak)) {
-			snprintf(ifname_bak, IF_NAME_MAX_LEN, ifname);
+			snprintf(ifname_bak, IF_NAME_MAX_LEN, "%s", ifname);
 			snprintf(xpath, XPATH_MAX_LEN,
 				 "%s[name='%s']/%s:*//*", IF_XPATH, ifname,
 				 QBV_MODULE_NAME);
