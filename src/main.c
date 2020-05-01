@@ -36,6 +36,10 @@
 #include "file_mon.h"
 #include "cb_streamid.h"
 #include "qci.h"
+#include "ip_cfg.h"
+#include "vlan_cfg.h"
+#include "mac_cfg.h"
+#include "brtc_cfg.h"
 
 static uint8_t exit_application;
 
@@ -188,6 +192,18 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
+	/* Subscribe to IP_CFG subtree */
+	snprintf(path, XPATH_MAX_LEN, "%s", IF_XPATH);
+	strncat(path, IPV4_XPATH, XPATH_MAX_LEN - 1 - strlen(path));
+	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+	rc = sr_subtree_change_subscribe(session, path, ip_subtree_change_cb,
+					 NULL, 0, opts, &if_subscription);
+	if (rc != SR_ERR_OK) {
+		fprintf(stderr, "Error subscribe ip_subtree_change_cb: %s\n",
+			sr_strerror(rc));
+		goto cleanup;
+	}
+
 	/* Subscribe to ieee802-dot1q-bridge module */
 	opts = SR_SUBSCR_APPLY_ONLY | SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE;
 	rc = sr_module_change_subscribe(session, "ieee802-dot1q-bridge",
@@ -237,6 +253,40 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
+	/* Subscribe to VLAN_CFG subtree */
+	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
+	strncat(path, BR_VLAN_XPATH, XPATH_MAX_LEN - 1 - strlen(path));
+	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+	rc = sr_subtree_change_subscribe(session, path, vlan_subtree_change_cb,
+					NULL, 0, opts, &bridge_subscription);
+	if (rc != SR_ERR_OK) {
+		fprintf(stderr, "Error subscribe vlan_subtree_change_cb: %s\n",
+			sr_strerror(rc));
+		goto cleanup;
+	}
+
+	/* Subscribe to MAC_CFG subtree */
+	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_ADDR_XPATH);
+	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+	rc = sr_subtree_change_subscribe(session, path, mac_subtree_change_cb,
+					NULL, 0, opts, &bridge_subscription);
+	if (rc != SR_ERR_OK) {
+		fprintf(stderr, "Error subscribe mac_subtree_change_cb: %s\n",
+			sr_strerror(rc));
+		goto cleanup;
+	}
+
+	/* Subscribe to BR_TC_CFG subtree */
+	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
+	strncat(path, BR_TC_XPATH, XPATH_MAX_LEN - 1 - strlen(path));
+	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+	rc = sr_subtree_change_subscribe(session, path, brtc_subtree_change_cb,
+					NULL, 0, opts, &bridge_subscription);
+	if (rc != SR_ERR_OK) {
+		fprintf(stderr, "Error subscribe brtc_subtree_change_cb: %s\n",
+			sr_strerror(rc));
+		goto cleanup;
+	}
 
 	/* Loop until ctrl-c is pressed / SIGINT is received */
 	signal(SIGINT, sigint_handler);

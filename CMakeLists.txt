@@ -47,6 +47,10 @@ set(SOURCES
 		src/qci_sf.c
 		src/qci_sg.c
 		src/qci_fm.c
+		src/brtc_cfg.c
+		src/ip_cfg.c
+		src/mac_cfg.c
+		src/vlan_cfg.c
 		src/file_mon.c)
 
 find_package(PkgConfig)
@@ -104,6 +108,10 @@ if (NOT CHMOD_EXECUTABLE)
 endif()
 if (NOT CHMOD_EXECUTABLE)
     message(FATAL_ERROR "Unable to find chmod, set CHMOD_EXECUTABLE manually.")
+endif()
+
+if (CONF_SYSREPO_TSN_TC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSYSREPO_TSN_TC")
 endif()
 
 # Command line options to be passed to `sysrepoctl` when working with modules

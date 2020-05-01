@@ -34,6 +34,33 @@
 #include "sysrepo/xpath.h"
 #include <tsn/genl_tsn.h> /* must ensure no stdbool.h was included before */
 #include <linux/tsn.h>
+#include <errno.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <signal.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <netdb.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <net/route.h>
+#include <sys/ioctl.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <sys/mman.h>
+#include <sys/time.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <linux/if_vlan.h>
+#include <linux/sockios.h>
+
+#define PRINT printf
 
 enum apply_status {
 	APPLY_NONE = 0,
