@@ -1,0 +1,17 @@
+<interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces"
+	    xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"
+	    xmlns:ip="urn:ietf:params:xml:ns:yang:ietf-ip">
+	<interface>
+		<name>swp2</name>
+		<enabled>true</enabled>
+		<type xmlns:ianaift="urn:ietf:params:xml:ns:yang:iana-if-type">ianaift:ethernetCsmacd</type>
+		<ip:ipv4>
+			<ip:enabled>true</ip:enabled>
+			<ip:forwarding>false</ip:forwarding>
+			<ip:address>
+				<ip:ip>192.168.78.129</ip:ip>
+				<ip:netmask>255.255.0.0</ip:netmask>
+			</ip:address>
+		</ip:ipv4>
+	</interface>
+</interfaces>

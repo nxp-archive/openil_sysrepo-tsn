@@ -1,0 +1,287 @@
+module nxp-bridge-vlan-tc-flower {
+  namespace
+    urn:nxp:dn:storage:yang:nxp-bridge-vlan-tc-flower;
+  prefix brtc;
+  import ieee802-types {
+    prefix ieee;
+  }
+  import ieee802-dot1q-bridge {
+    prefix dot1q;
+  }
+  import ietf-interfaces {
+    prefix if;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ieee802-dot1q-types {
+    prefix dot1qtypes;
+  }
+
+  organization
+    "NXP Semiconductors";
+  contact
+    "URL: http://www.nxp.com
+    EMail: hongbo.wang@nxp.com
+    Contact: NXP Semiconductors
+    Postal: ";
+
+  description
+    "This module provides management of NXP bridge vlan filter using
+	tc flower";
+
+  revision 2020-04-02 {
+    description
+      "Initial module for bridge vlan filter.";
+    reference
+      "";
+  }
+
+  typedef qdisc-action-type {
+    type enumeration {
+      enum add {
+        value 0;
+        description
+          "add qdisc";
+      }
+      enum change {
+        value 1;
+        description
+          "change qdisc";
+      }
+      enum replace {
+        value 2;
+        description
+          "replace qdisc";
+      }
+      enum link {
+        value 3;
+        description
+          "link qdisc";
+      }
+      enum delete {
+        value 4;
+        description
+          "delete qdisc";
+      }
+    }
+  }
+  typedef qdisc-block-type {
+    type enumeration {
+      enum ingress {
+        value 0;
+        description
+          "ingress block operation";
+      }
+      enum egress {
+        value 1;
+        description
+          "egress block operation";
+      }
+    }
+  }
+  typedef filter-action-type {
+    type enumeration {
+      enum add {
+        value 0;
+        description
+          "add qdisc";
+      }
+      enum change {
+        value 1;
+        description
+          "change qdisc";
+      }
+      enum replace {
+        value 2;
+        description
+          "replace qdisc";
+      }
+      enum delete {
+        value 3;
+        description
+          "delete qdisc";
+      }
+      enum get {
+        value 4;
+        description
+          "get qdisc";
+      }
+    }
+  }
+
+  typedef filter-type {
+    type enumeration {
+      enum basic {
+        value 0;
+      }
+      enum bpf {
+        value 1;
+      }
+      enum cgroup {
+        value 2;
+      }
+      enum flow {
+        value 3;
+      }
+      enum flower {
+        value 4;
+      }
+      enum fw {
+        value 5;
+      }
+      enum route {
+        value 6;
+      }
+      enum rsvp {
+        value 7;
+      }
+      enum tcindex {
+        value 8;
+      }
+      enum u32 {
+        value 9;
+      }
+      enum matchall {
+        value 10;
+      }
+    }
+  }
+  augment "/dot1q:bridges/dot1q:bridge/dot1q:component" {
+    description
+      "Augment the Bridge and ports traffic control with tc flower.";
+    container traffic-control {
+      description
+        "This container encapsulates all nodes related to traffic
+		control.";
+      reference
+        "";
+      list tc-flower-table {
+        key "tc-flower-id";
+        description
+          "";
+        reference
+          "";
+        leaf tc-flower-id {
+          type uint32;
+          mandatory true;
+          description
+            "";
+          reference
+            "";
+        }
+
+        container qdisc {
+          description
+            "";
+          reference
+            "";
+
+          leaf action {
+            type qdisc-action-type;
+            description
+              "";
+          }
+          leaf interface {
+            type string;
+            mandatory true;
+            description
+              "";
+          }
+          leaf block {
+            type qdisc-block-type;
+            description
+              "";
+          }
+        }
+
+        container filter {
+          description
+            "";
+          reference
+            "";
+
+          leaf action {
+            type filter-action-type;
+            description
+              "";
+          }
+          leaf interface {
+            type string;
+            mandatory true;
+            description
+              "";
+          }
+          leaf protocol {
+            type string;
+            description
+              "";
+          }
+          leaf parent {
+            type string;
+            description
+              "";
+          }
+          leaf filter_type {
+            type filter-type;
+            description
+              "";
+          }
+          leaf skip_type {
+            type string;
+            description
+              "";
+          }
+          leaf vlan_id {
+            type dot1qtypes:vlan-index-type;
+            description
+              "";
+          }
+          leaf priority {
+            type dot1qtypes:priority-type;
+            description
+              "";
+          }
+          leaf src_ip {
+            type inet:ipv4-address-no-zone;
+            description
+              "The source IPv4 address.";
+          }
+          leaf dst_ip {
+            type inet:ipv4-address-no-zone;
+            description
+              "The destination IPv4 address.";
+          }
+          leaf src_port {
+            type dot1qtypes:port-number-type;
+            description
+              "The source port number.";
+          }
+          leaf dst_port {
+            type dot1qtypes:port-number-type;
+            description
+              "The destination port number.";
+          }
+          leaf src_mac {
+            type ieee:mac-address;
+            description
+              "The source mac address.";
+          }
+          leaf dst_mac {
+            type ieee:mac-address;
+            description
+              "The destination mac address.";
+          }
+          leaf action_spec {
+            type string;
+            description
+              "";
+          }
+        }
+      }
+    }
+  }
+}
