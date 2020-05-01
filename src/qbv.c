@@ -29,6 +29,11 @@
 #include "main.h"
 #include "qbv.h"
 
+static bool stc_cfg_flag;
+static char stc_cmd[MAX_CMD_LEN];
+static char stc_subcmd[MAX_CMD_LEN];
+static char sif_name[IF_NAME_MAX_LEN];
+
 struct tsn_qbv_conf *malloc_qbv_memory(void)
 {
 	struct tsn_qbv_conf *qbvconf_ptr;
@@ -66,6 +71,127 @@ void free_qbv_memory(struct tsn_qbv_conf *qbvconf_ptr)
 	free(qbvconf_ptr);
 }
 
+static int tsn_config_del_qbv_by_tc(struct sr_qbv_conf *qbvconf, char *ifname)
+{
+	int rc = SR_ERR_OK;
+
+	if (!ifname)
+		return rc;
+
+	snprintf(stc_cmd, MAX_CMD_LEN, "tc qdisc del ");
+
+	snprintf(stc_subcmd, MAX_CMD_LEN, "dev %s ", ifname);
+	strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+
+	snprintf(stc_subcmd, MAX_CMD_LEN, "parent root handle 100");
+	strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+
+	system(stc_cmd);
+	printf("cmd:%s\n", stc_cmd);
+
+	return rc;
+}
+
+static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
+		struct sr_qbv_conf *qbvconf)
+{
+	int i = 0;
+	int count = 1;
+	int offset = 0;
+	pid_t sysret = 0;
+	int rc = SR_ERR_OK;
+	uint32_t clockid = 0;
+	uint32_t gate_mask = 0;
+	uint32_t interval = 0;
+	uint64_t base_time = 0;
+	uint64_t cycle_time = 0;
+	int num_tc = QBV_TC_NUM;
+	uint64_t cycle_time_extension = 0;
+	struct tsn_qbv_entry *entry = NULL;
+	struct tsn_qbv_conf *pqbv = qbvconf->qbvconf_ptr;
+
+	if (pqbv->admin.control_list_length == 0)
+		return rc;
+
+	tsn_config_del_qbv_by_tc(qbvconf, ifname);
+
+	base_time = pqbv->admin.base_time;
+	cycle_time = pqbv->admin.cycle_time;
+	cycle_time_extension = pqbv->admin.cycle_time_extension;
+
+	snprintf(stc_cmd, MAX_CMD_LEN, "tc qdisc add ");
+
+	snprintf(stc_subcmd, MAX_CMD_LEN, "dev %s ", ifname);
+	strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+
+	snprintf(stc_subcmd, MAX_CMD_LEN, "parent root handle 100 taprio ");
+	strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+
+	snprintf(stc_subcmd, MAX_CMD_LEN, "num_tc %d map ", num_tc);
+	strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+
+	for (i = 0; i < num_tc; i++) {
+		snprintf(stc_subcmd, MAX_CMD_LEN, "%d ", i);
+		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+	}
+
+	snprintf(stc_subcmd, MAX_CMD_LEN, "queues ");
+	strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+
+	for (i = 0; i < num_tc; i++) {
+		offset = i;
+		snprintf(stc_subcmd, MAX_CMD_LEN, "%d@%d ", count, offset);
+		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+	}
+
+	if (base_time > 0) {
+		snprintf(stc_subcmd, MAX_CMD_LEN, "base-time %lld ", base_time);
+		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+	}
+
+	if (cycle_time > 0) {
+		snprintf(stc_subcmd, MAX_CMD_LEN, "cycle-time %lld ",
+				cycle_time);
+		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+	}
+
+	if (cycle_time_extension > 0) {
+		snprintf(stc_subcmd, MAX_CMD_LEN, "cycle-time-extension %lld ",
+				cycle_time_extension);
+		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+	}
+
+	if (clockid > 0) {
+		snprintf(stc_subcmd, MAX_CMD_LEN, "clockid %d ", clockid);
+		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+	}
+
+	for (i = 0; i < pqbv->admin.control_list_length; i++) {
+		entry = pqbv->admin.control_list;
+
+		gate_mask = entry[i].gate_state;
+		interval = entry[i].time_interval;
+
+		snprintf(stc_subcmd, MAX_CMD_LEN, "sched-entry S %X %d ",
+				gate_mask, interval);
+		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+	}
+
+	snprintf(stc_subcmd, MAX_CMD_LEN, "flags 2");
+	strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+
+	sysret = system(stc_cmd);
+	if ((sysret != -1) && WIFEXITED(sysret) && (WEXITSTATUS(sysret) == 0)) {
+		printf("ok. cmd:%s\n", stc_cmd);
+		snprintf(sif_name, IF_NAME_MAX_LEN, "%s", ifname);
+	} else {
+		printf("failed! ret:0x%X cmd:%s\n", sysret, stc_cmd);
+		rc = SR_ERR_INVAL_ARG;
+	}
+
+	return rc;
+}
+
 int tsn_config_qbv(sr_session_ctx_t *session, char *ifname,
 		struct sr_qbv_conf *qbvconf)
 {
@@ -82,6 +208,9 @@ int tsn_config_qbv(sr_session_ctx_t *session, char *ifname,
 		time = cal_cycle_time(&qbvconf->cycletime);
 		qbvconf->qbvconf_ptr->admin.cycle_time = time;
 	}
+
+	if (stc_cfg_flag)
+		return tsn_config_qbv_by_tc(session, ifname, qbvconf);
 
 	rc = tsn_qos_port_qbv_set(ifname, qbvconf->qbvconf_ptr,
 				  qbvconf->qbv_en);
@@ -113,6 +242,9 @@ void clr_qbv(sr_val_t *value, struct sr_qbv_conf *qbvconf)
 	nodename = sr_xpath_node_name(value->xpath);
 	if (!nodename)
 		return;
+
+	if (stc_cfg_flag && (strlen(sif_name) > 0))
+		tsn_config_del_qbv_by_tc(qbvconf, sif_name);
 
 	if (!strcmp(nodename, "gate-enabled")) {
 		qbvconf->qbv_en = false;
@@ -418,6 +550,12 @@ int qbv_subtree_change_cb(sr_session_ctx_t *session, const char *path,
 {
 	int rc = SR_ERR_OK;
 	char xpath[XPATH_MAX_LEN] = {0,};
+
+#ifdef SYSREPO_TSN_TC
+	stc_cfg_flag = true;
+#else
+	stc_cfg_flag = false;
+#endif
 
 	/* Only process called by gate-parameters is enough */
 	if (sr_xpath_node_name_eq(path, "ieee802-dot1q-sched:max-sdu-table"))
