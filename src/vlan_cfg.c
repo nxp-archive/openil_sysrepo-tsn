@@ -222,7 +222,6 @@ static int set_config(sr_session_ctx_t *session, bool abort)
 	if (!conf->valid)
 		return rc;
 
-	set_inet_vlan(conf->ifname, conf->vid, false);
 	ret = set_inet_vlan(conf->ifname, conf->vid, true);
 	if (ret != 0)
 		return SR_ERR_INVAL_ARG;

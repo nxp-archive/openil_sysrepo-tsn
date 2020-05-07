@@ -243,8 +243,10 @@ void clr_qbv(sr_val_t *value, struct sr_qbv_conf *qbvconf)
 	if (!nodename)
 		return;
 
-	if (stc_cfg_flag && (strlen(sif_name) > 0))
+	if (stc_cfg_flag && (strlen(sif_name) > 0)) {
 		tsn_config_del_qbv_by_tc(qbvconf, sif_name);
+		memset(sif_name, 0, sizeof(sif_name));
+	}
 
 	if (!strcmp(nodename, "gate-enabled")) {
 		qbvconf->qbv_en = false;
@@ -485,7 +487,8 @@ int config_qbv_per_port(sr_session_ctx_t *session, char *path, bool abort,
 			goto cleanup;
 	}
 config_qbv:
-	init_tsn_socket();
+	if (!stc_cfg_flag)
+		init_tsn_socket();
 	rc = tsn_config_qbv(session, ifname, &qbvconf);
 	close_tsn_socket();
 
