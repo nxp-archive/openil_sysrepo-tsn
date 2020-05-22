@@ -307,7 +307,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, sigint_handler);
 	signal(SIGPIPE, SIG_IGN);
 	while (!exit_application)
-		sleep(1000);  /* Or do some more useful work... */
+		sleep(1);  /* Or do some more useful work... */
 
 cleanup:
 	destroy_tsn_mutex();
