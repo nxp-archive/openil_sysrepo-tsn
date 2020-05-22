@@ -1,0 +1,32 @@
+<bridges xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"
+	xmlns:brtc="urn:nxp:dn:storage:yang:nxp-bridge-vlan-tc-flower">
+	<bridge>
+		<name>br1</name>
+		<bridge-type>provider-edge-bridge</bridge-type>
+		<address>d6-ad-62-c1-68-ad</address>
+		<component>
+	        <name>eno0</name>
+	  	    <type>edge-relay-component</type>
+		    <brtc:traffic-control>
+	    		<brtc:tc-flower-table>
+	    	    	<brtc:tc-flower-id>17</brtc:tc-flower-id>
+	    		    <brtc:qdisc>
+	    	    	    <brtc:action>add</brtc:action>
+	    	    	    <brtc:interface>swp2</brtc:interface>
+	    	    	    <brtc:block>ingress</brtc:block>
+	    	        </brtc:qdisc>
+	    		    <brtc:filter>
+	    	    	    <brtc:action>add</brtc:action>
+	    	    	    <brtc:interface>swp2</brtc:interface>
+	    	    		<brtc:protocol>ip</brtc:protocol>
+	    	    		<brtc:parent>ffff:</brtc:parent>
+	    	    		<brtc:filter_type>flower</brtc:filter_type>
+	    	    		<brtc:skip_type>skip_sw</brtc:skip_type>
+	    	    		<brtc:src_ip>192.168.50.119</brtc:src_ip>
+	    	    		<brtc:action_spec>police rate 100Mbit burst 10000</brtc:action_spec>
+	    	        </brtc:filter>
+	    		</brtc:tc-flower-table>
+		    </brtc:traffic-control>
+		</component>
+	</bridge>
+</bridges>
