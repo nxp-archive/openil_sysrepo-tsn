@@ -1,7 +1,7 @@
 <bridges xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"
 	xmlns:brtc="urn:nxp:dn:storage:yang:nxp-bridge-vlan-tc-flower">
 	<bridge>
-		<name>br0</name>
+		<name>br1</name>
 		<bridge-type>provider-edge-bridge</bridge-type>
 		<address>d6-ad-62-c8-49-ae</address>
 		<component>
@@ -22,9 +22,9 @@
 	    	    		<brtc:parent>ffff:</brtc:parent>
 	    	    		<brtc:filter_type>flower</brtc:filter_type>
 	    	    		<brtc:skip_type>skip_sw</brtc:skip_type>
-	    	    		<brtc:vlan_id>104</brtc:vlan_id>
-	    	    		<brtc:priority>6</brtc:priority>
-	    	    		<brtc:action_spec>vlan modify id 0 priority 5</brtc:action_spec>
+	    	    		<brtc:vlan_id>1</brtc:vlan_id>
+	    	    		<brtc:priority>1</brtc:priority>
+	    	    		<brtc:action_spec>vlan modify id 2 priority 2</brtc:action_spec>
 	    	        </brtc:filter>
 	    		</brtc:tc-flower-table>
 		    </brtc:traffic-control>

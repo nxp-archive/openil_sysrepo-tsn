@@ -1,6 +1,6 @@
 <bridges xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge">
 	<bridge>
-		<name>br0</name>
+		<name>br1</name>
 		<bridge-type>provider-edge-bridge</bridge-type>
 		<address>d6-ad-69-c6-63-ad</address>
 		<component>
