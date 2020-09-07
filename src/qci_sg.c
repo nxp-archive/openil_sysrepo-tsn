@@ -612,6 +612,7 @@ int qci_sg_get_para(char *buf, int len)
 	char sub_buf[SUB_CMD_LEN];
 	bool trap_flag = false;
 	char *host_name = NULL;
+	char *ifn = NULL;
 	int i = 0;
 	int j = 0;
 
@@ -649,6 +650,10 @@ int qci_sg_get_para(char *buf, int len)
 	host_name = get_host_name();
 	if (!host_name)
 		goto ret_tag;
+
+	ifn = get_interface_name();
+	if (strstr(host_name, "LS1028ATSN") && (strlen(ifn) >= 5) && (ifn[0] == 's') && (ifn[1] == 'w'))
+		trap_flag = true;
 
 	if (strstr(host_name, "LS1021ATSN"))
 		trap_flag = true;
