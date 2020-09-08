@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<bridges xmlns="urn:ieee:std:802.1Q:yang:ieee802-dot1q-bridge"
+         xmlns:sfsg="urn:ieee:std:802.1Q:yang:ieee802-dot1q-stream-filters-gates"
+	 xmlns:qci-augment="urn:ieee:std:802.1Q:yang:ieee802-dot1q-qci-augment"
+	 xmlns:stream="urn:ieee:std:802.1Q:yang:ieee802-dot1q-stream-id"
+         xmlns:psfp="urn:ieee:std:802.1Q:yang:ieee802-dot1q-psfp">
+	<bridge>
+        <name>switch</name>
+	<bridge-type>provider-edge-bridge</bridge-type>
+	<address>d6-ad-62-c6-49-ae</address>
+        <component>
+            <name>swp2</name>
+	    <type>edge-relay-component</type>
+	    <stream:streams>
+                <stream:stream-identity-table>
+                    <stream:index>2</stream:index>
+                    <stream:stream-id-enabled>true</stream:stream-id-enabled>
+                    <stream:stream-handle>1</stream:stream-handle>
+                    <stream:identification-type>null</stream:identification-type>
+                    <stream:parameters>
+	    	        <stream:null-stream-identification-params>
+	    	            <stream:dest-address>ff-ff-ff-ff-ff-ff</stream:dest-address>
+	    	            <stream:vlan-tagged>all</stream:vlan-tagged>
+	    	            <stream:vlan-id>0</stream:vlan-id>
+	    	        </stream:null-stream-identification-params>
+                    </stream:parameters>
+                </stream:stream-identity-table>
+            </stream:streams>
+            <psfp:flow-meters>
+                <psfp:flow-meter-instance-table>
+                    <psfp:flow-meter-instance-id>1</psfp:flow-meter-instance-id>
+                    <qci-augment:flow-meter-enabled>true</qci-augment:flow-meter-enabled>
+                    <psfp:committed-information-rate>20000000</psfp:committed-information-rate>
+                    <psfp:committed-burst-size>5000</psfp:committed-burst-size>
+                    <psfp:excess-information-rate>10000000</psfp:excess-information-rate>
+                    <psfp:excess-burst-size>65535</psfp:excess-burst-size>
+                    <psfp:coupling-flag>one</psfp:coupling-flag>
+                    <psfp:color-mode>color-blind</psfp:color-mode>
+                    <psfp:drop-on-yellow>true</psfp:drop-on-yellow>
+                </psfp:flow-meter-instance-table>
+            </psfp:flow-meters>
+        </component>
+	</bridge>
+</bridges>
