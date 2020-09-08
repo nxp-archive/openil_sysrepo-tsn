@@ -365,7 +365,7 @@ static int set_config(sr_session_ctx_t *session, bool abort)
 		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
 	}
 	sysret = system(stc_cmd);
-	if ((sysret != -1) && WIFEXITED(sysret) && (WEXITSTATUS(sysret) == 0))
+	if (SYSCALL_OK(sysret))
 		rc = SR_ERR_OK;
 	else
 		rc = SR_ERR_INVAL_ARG;

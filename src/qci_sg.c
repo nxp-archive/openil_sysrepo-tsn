@@ -41,6 +41,9 @@
 
 struct std_qci_list *sg_list_head;
 
+static bool stc_cfg_flag;
+static struct tc_qci_gates_para sqci_gates_para;
+
 void clr_qci_sg(sr_session_ctx_t *session, sr_val_t *value,
 		struct std_sg *sgi)
 {
@@ -122,6 +125,21 @@ void clr_qci_sg(sr_session_ctx_t *session, sr_val_t *value,
 	}
 }
 
+static struct tc_qci_gate_entry *qci_gate_find_entry(uint32_t id)
+{
+	struct tc_qci_gates_para *para = &sqci_gates_para;
+	struct tc_qci_gate_entry *gate = NULL;
+	int i = 0;
+
+	for (i = 0; i < para->entry_cnt; i++) {
+		gate = para->entry + i;
+		if (gate->id == id)
+			return gate;
+	}
+
+	return NULL;
+}
+
 int parse_qci_sg(sr_session_ctx_t *session, sr_val_t *value,
 		struct std_sg *sgi)
 {
@@ -134,11 +152,20 @@ int parse_qci_sg(sr_session_ctx_t *session, sr_val_t *value,
 	char *index;
 	char err_msg[MSG_MAX_LEN] = {0};
 	struct tsn_qci_psfp_gcl *entry = sgi->sgconf.admin.gcl;
+	struct tc_qci_gates_para *para = &sqci_gates_para;
+	struct tc_qci_gate_entry *gate = NULL;
+	struct tc_qci_gate_acl *acl = NULL;
 
 	sr_xpath_recover(&xp_ctx);
 	nodename = sr_xpath_node_name(value->xpath);
 	if (!nodename)
 		goto out;
+
+	gate = qci_gate_find_entry(sgi->sg_id);
+	if (stc_cfg_flag && !gate)
+		goto out;
+
+	acl = gate->acl;
 
 	if (!strcmp(nodename, "gate-enable")) {
 		sgi->enable = value->data.bool_val;
@@ -159,11 +186,13 @@ int parse_qci_sg(sr_session_ctx_t *session, sr_val_t *value,
 			rc = SR_ERR_INVAL_ARG;
 			goto out;
 		}
+		gate->gate_state = sgi->sgconf.admin.gate_states;
 	} else if (!strcmp(nodename, "admin-ipv")) {
 		pri2num(value->data.enum_val, &sgi->sgconf.admin.init_ipv);
 	} else if (!strcmp(nodename, ADMIN_CTR_LIST_LEN)) {
 		u8_val = (uint8_t)value->data.int32_val;
 		sgi->sgconf.admin.control_list_length = u8_val;
+		gate->acl_len = MIN(u8_val, SUB_PARA_LEN);
 	} else if (!strcmp(nodename, "gate-state-value")) {
 		sr_xpath_recover(&xp_ctx);
 		index = sr_xpath_key_value(value->xpath,
@@ -184,6 +213,9 @@ int parse_qci_sg(sr_session_ctx_t *session, sr_val_t *value,
 			rc = SR_ERR_INVAL_ARG;
 			goto out;
 		}
+
+		if (u64_val < SUB_PARA_LEN)
+			acl[u64_val].state = (entry + u64_val)->gate_state;
 	} else if (!strcmp(nodename, "ipv-value")) {
 		sr_xpath_recover(&xp_ctx);
 		index = sr_xpath_key_value(value->xpath,
@@ -194,6 +226,8 @@ int parse_qci_sg(sr_session_ctx_t *session, sr_val_t *value,
 			goto out;
 
 		pri2num(value->data.enum_val, &(entry + u64_val)->ipv);
+		if (u64_val < SUB_PARA_LEN)
+			acl[u64_val].ipv = (entry + u64_val)->ipv;
 	} else if (!strcmp(nodename, "time-interval-value")) {
 		sr_xpath_recover(&xp_ctx);
 		index = sr_xpath_key_value(value->xpath,
@@ -204,6 +238,8 @@ int parse_qci_sg(sr_session_ctx_t *session, sr_val_t *value,
 			goto out;
 
 		(entry + u64_val)->time_interval = value->data.uint32_val;
+		if (u64_val < SUB_PARA_LEN)
+			acl[u64_val].interval = value->data.uint32_val;
 	} else if (!strcmp(nodename, "interval-octet-max")) {
 		sr_xpath_recover(&xp_ctx);
 		index = sr_xpath_key_value(value->xpath,
@@ -248,6 +284,8 @@ int parse_qci_sg(sr_session_ctx_t *session, sr_val_t *value,
 		sgi->sgconf.block_octets_exceeded = value->data.bool_val;
 	}
 
+	para->set_flag = true;
+
 out:
 	return rc;
 }
@@ -268,6 +306,8 @@ int get_sg_per_port_per_id(sr_session_ctx_t *session, const char *path)
 	uint32_t sgid = 0;
 	struct std_qci_list *cur_node = NULL;
 	char sgid_bak[IF_NAME_MAX_LEN] = "unknown";
+	struct tc_qci_gates_para *para = &sqci_gates_para;
+	int cnt = 0;
 
 	rc = sr_get_changes_iter(session, path, &it);
 
@@ -303,6 +343,9 @@ int get_sg_per_port_per_id(sr_session_ctx_t *session, const char *path)
 		if (!cpname)
 			continue;
 
+		if (cnt < SUB_PARA_LEN)
+			para->entry[cnt++].id = sgid;
+
 		if (!sg_list_head) {
 			sg_list_head = new_list_node(QCI_T_SG, cpname, sgid);
 			if (!sg_list_head) {
@@ -331,6 +374,8 @@ int get_sg_per_port_per_id(sr_session_ctx_t *session, const char *path)
 			add_node2list(sg_list_head, cur_node);
 		}
 	}
+	para->entry_cnt = cnt;
+
 	if (rc == SR_ERR_NOT_FOUND)
 		rc = SR_ERR_OK;
 
@@ -404,7 +449,6 @@ int parse_sg_per_port_per_id(sr_session_ctx_t *session, bool abort)
 		rc = sr_get_items(session, xpath, &values, &count);
 		if (rc == SR_ERR_NOT_FOUND) {
 			rc = SR_ERR_OK;
-			cur_node = cur_node->next;
 			/*
 			 * If can't find any item, we should check whether this
 			 * container was deleted.
@@ -418,6 +462,7 @@ int parse_sg_per_port_per_id(sr_session_ctx_t *session, bool abort)
 				       sr_strerror(rc));
 				del_list_node(cur_node->pre, QCI_T_SG);
 			}
+			cur_node = cur_node->next;
 			continue;
 		} else if (rc != SR_ERR_OK) {
 			snprintf(err_msg, MSG_MAX_LEN,
@@ -503,6 +548,36 @@ cleanup:
 	return rc;
 }
 
+static int qci_sg_update_time(void)
+{
+	struct std_qci_list *cur_node = sg_list_head;
+	struct tc_qci_gate_entry *gate = NULL;
+	struct std_sg *sg_ptr;
+	uint64_t time;
+
+	while (cur_node) {
+		sg_ptr = cur_node->sg_ptr;
+
+		gate = qci_gate_find_entry(sg_ptr->sg_id);
+		if (!gate)
+			break;
+
+		if (sg_ptr->basetime_f) {
+			time = cal_base_time(&sg_ptr->basetime);
+			gate->base_time = time;
+		}
+
+		if (sg_ptr->cycletime_f) {
+			time = cal_cycle_time(&sg_ptr->cycletime);
+			gate->cycle_time = time;
+		}
+
+		cur_node = cur_node->next;
+	}
+
+	return SR_ERR_OK;
+}
+
 int qci_sg_config(sr_session_ctx_t *session, const char *path, bool abort)
 {
 	int rc = SR_ERR_OK;
@@ -519,9 +594,83 @@ int qci_sg_config(sr_session_ctx_t *session, const char *path, bool abort)
 	if (rc != SR_ERR_OK)
 		goto out;
 
-	rc = config_sg(session);
+	if (stc_cfg_flag) {
+		qci_sg_update_time();
+		rc = qci_check_parameter();
+	} else {
+		rc = config_sg(session);
+	}
 out:
 	return rc;
+}
+
+int qci_sg_get_para(char *buf, int len)
+{
+	struct tc_qci_gates_para *para = &sqci_gates_para;
+	struct tc_qci_gate_entry *gate = NULL;
+	struct tc_qci_gate_acl *acl = NULL;
+	char sub_buf[SUB_CMD_LEN];
+	bool trap_flag = false;
+	char *host_name = NULL;
+	char *ifn = NULL;
+	int i = 0;
+	int j = 0;
+
+	if (!para->set_flag || !buf || !len)
+		return 0;
+
+	for (i = 0; i < para->entry_cnt; i++) {
+		gate = para->entry + i;
+
+		snprintf(sub_buf, len, "action gate index %d ", gate->id);
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+		snprintf(sub_buf, SUB_CMD_LEN, "base-time %" PRIu64 " ", gate->base_time);
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+		if (gate->cycle_time) {
+			snprintf(sub_buf, SUB_CMD_LEN, "cycle-time %" PRIu64 " ", gate->cycle_time);
+			strncat(buf, sub_buf, len - 1 - strlen(buf));
+		}
+
+		for (j = 0; j < gate->acl_len; j++) {
+			acl = gate->acl + j;
+
+			if (acl->state)
+				snprintf(sub_buf, SUB_CMD_LEN, "sched-entry OPEN ");
+			else
+				snprintf(sub_buf, SUB_CMD_LEN, "sched-entry CLOSE ");
+			strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+			snprintf(sub_buf, SUB_CMD_LEN, "%d %d -1 ", acl->interval, acl->ipv);
+			strncat(buf, sub_buf, len - 1 - strlen(buf));
+		}
+	}
+
+	host_name = get_host_name();
+	if (!host_name)
+		goto ret_tag;
+
+	ifn = get_interface_name();
+	if (strstr(host_name, "LS1028ATSN") && (strlen(ifn) >= 5) && (ifn[0] == 's') && (ifn[1] == 'w'))
+		trap_flag = true;
+
+	if (strstr(host_name, "LS1021ATSN"))
+		trap_flag = true;
+
+	if (trap_flag) {
+		snprintf(sub_buf, SUB_CMD_LEN, "action trap ");
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+	}
+
+ret_tag:
+	return (int)strlen(buf);
+}
+
+int qci_sg_clear_para(void)
+{
+	memset(&sqci_gates_para, 0, sizeof(sqci_gates_para));
+	return 0;
 }
 
 int qci_sg_subtree_change_cb(sr_session_ctx_t *session, const char *path,
@@ -532,6 +681,15 @@ int qci_sg_subtree_change_cb(sr_session_ctx_t *session, const char *path,
 
 	snprintf(xpath, XPATH_MAX_LEN, "%s%s//*", BRIDGE_COMPONENT_XPATH,
 		 QCISG_XPATH);
+
+#ifdef SYSREPO_TSN_TC
+	stc_cfg_flag = true;
+	qci_set_xpath(xpath);
+	qci_set_session(session);
+#else
+	stc_cfg_flag = false;
+#endif
+
 	switch (event) {
 	case SR_EV_VERIFY:
 		rc = qci_sg_config(session, xpath, false);

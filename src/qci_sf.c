@@ -32,6 +32,7 @@
 #include "qci.h"
 
 struct std_qci_list *sf_list_head;
+static bool stc_cfg_flag;
 
 void clr_qci_sf(sr_session_ctx_t *session, sr_val_t *value,
 		struct std_sf *sfi)
@@ -285,7 +286,6 @@ int parse_sf_per_port_per_id(sr_session_ctx_t *session, bool abort)
 		rc = sr_get_items(session, xpath, &values, &count);
 		if (rc == SR_ERR_NOT_FOUND) {
 			rc = SR_ERR_OK;
-			cur_node = cur_node->next;
 			/*
 			 * If can't find any item, we should check whether this
 			 * container was deleted.
@@ -300,6 +300,7 @@ int parse_sf_per_port_per_id(sr_session_ctx_t *session, bool abort)
 				       sr_strerror(rc));
 				del_list_node(cur_node->pre, QCI_T_SF);
 			}
+			cur_node = cur_node->next;
 			continue;
 		} else if (rc != SR_ERR_OK) {
 				snprintf(err_msg, MSG_MAX_LEN,
@@ -391,7 +392,8 @@ int qci_sf_config(sr_session_ctx_t *session, const char *path, bool abort)
 	if (rc != SR_ERR_OK)
 		goto out;
 
-	rc = config_sf(session);
+	if (!stc_cfg_flag)
+		rc = config_sf(session);
 out:
 	return rc;
 }
@@ -401,6 +403,12 @@ int qci_sf_subtree_change_cb(sr_session_ctx_t *session, const char *path,
 {
 	int rc = SR_ERR_OK;
 	char xpath[XPATH_MAX_LEN] = {0,};
+
+#ifdef SYSREPO_TSN_TC
+	stc_cfg_flag = true;
+#else
+	stc_cfg_flag = false;
+#endif
 
 	snprintf(xpath, XPATH_MAX_LEN, "%s%s//*", BRIDGE_COMPONENT_XPATH,
 		 QCISF_XPATH);

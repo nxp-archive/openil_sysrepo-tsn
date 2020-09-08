@@ -103,7 +103,7 @@ static int set_inet_cfg(char *ifname, int req, void *buf, int len)
 
 	ret = ioctl(sockfd, SIOCGIFFLAGS, &ifr);
 	if (ret < 0) {
-		PRINT("%s:get interface flag error:%d\n", __func__, ret);
+		PRINT("%s:can not find \"%s\"\n", __func__, ifname);
 		return -3;
 	}
 

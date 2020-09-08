@@ -29,6 +29,10 @@
 #include "main.h"
 #include "qbu.h"
 
+static bool stc_cfg_flag;
+static char sqbu_cmd[MAX_CMD_LEN];
+static char sqbu_subcmd[MAX_CMD_LEN];
+
 void clr_qbu(sr_val_t *val, uint32_t *tc, uint8_t *pt,
 		sr_change_oper_t *oper)
 {
@@ -127,6 +131,27 @@ out:
 	return rc;
 }
 
+int tsn_qbu_set_ethtool(char *ifname, uint32_t tc, uint8_t pt)
+{
+	int rc = SR_ERR_OK;
+	pid_t sysret = 0;
+
+	snprintf(sqbu_cmd, MAX_CMD_LEN, "ethtool --set-frame-preemption %s ", ifname);
+
+	snprintf(sqbu_subcmd, MAX_CMD_LEN, "preemptible-queues-mask 0x%02X ", pt);
+	strncat(sqbu_cmd, sqbu_subcmd, MAX_CMD_LEN - 1 - strlen(sqbu_cmd));
+
+	sysret = system(sqbu_cmd);
+	if (SYSCALL_OK(sysret)) {
+		printf("ok. cmd:%s\n", sqbu_cmd);
+	} else {
+		printf("ret:0x%X cmd:%s\n", sysret, sqbu_cmd);
+		rc = SR_ERR_INVAL_ARG;
+	}
+
+	return rc;
+}
+
 int config_qbu_per_port(sr_session_ctx_t *session, char *path, bool abort,
 		char *ifname)
 {
@@ -185,9 +210,17 @@ int config_qbu_per_port(sr_session_ctx_t *session, char *path, bool abort,
 	}
 
 config_qbu:
-	init_tsn_socket();
-	rc = tsn_qbu_set(ifname, pt_num);
-	close_tsn_socket();
+	if (stc_cfg_flag) {
+		if (pt_num > 0)
+			rc = tsn_qbu_set_ethtool(ifname, tc_num, pt_num);
+		else
+			return rc;
+	} else {
+		init_tsn_socket();
+		rc = tsn_qbu_set(ifname, pt_num);
+		close_tsn_socket();
+	}
+
 	if (rc < 0) {
 		snprintf(xpath, XPATH_MAX_LEN, "%s[name='%s']/%s:*//*",
 			 IF_XPATH, ifname, QBU_MODULE_NAME);
@@ -260,6 +293,12 @@ int qbu_subtree_change_cb(sr_session_ctx_t *session, const char *path,
 {
 	int rc = SR_ERR_OK;
 	char xpath[XPATH_MAX_LEN] = {0};
+
+#ifdef SYSREPO_TSN_TC
+	stc_cfg_flag = true;
+#else
+	stc_cfg_flag = false;
+#endif
 
 	snprintf(xpath, XPATH_MAX_LEN, "%s/%s:*//*", IF_XPATH,
 		 QBU_MODULE_NAME);
