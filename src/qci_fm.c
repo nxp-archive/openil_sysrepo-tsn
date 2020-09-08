@@ -33,6 +33,9 @@
 
 struct std_qci_list *fm_list_head;
 
+static bool stc_cfg_flag;
+static struct tc_qci_policer_para sqci_policer_para;
+
 void clr_qci_fm(sr_session_ctx_t *session, sr_val_t *value,
 		struct std_fm *fmi)
 {
@@ -64,9 +67,26 @@ void clr_qci_fm(sr_session_ctx_t *session, sr_val_t *value,
 		fmi->fmconf.mark_red_enable = false;
 }
 
+static struct tc_qci_policer_entry *qci_fm_find_entry(uint32_t id)
+{
+	struct tc_qci_policer_para *para = &sqci_policer_para;
+	struct tc_qci_policer_entry *entry = NULL;
+	int i = 0;
+
+	for (i = 0; i < para->entry_cnt; i++) {
+		entry = para->entry + i;
+		if (entry->id == id)
+			return entry;
+	}
+
+	return NULL;
+}
+
 int parse_qci_fm(sr_session_ctx_t *session, sr_val_t *value,
 		struct std_fm *fmi)
 {
+	struct tc_qci_policer_para *para = &sqci_policer_para;
+	struct tc_qci_policer_entry *entry = NULL;
 	int rc = SR_ERR_OK;
 	sr_xpath_ctx_t xp_ctx = {0};
 	char *nodename;
@@ -78,16 +98,24 @@ int parse_qci_fm(sr_session_ctx_t *session, sr_val_t *value,
 	if (!nodename)
 		goto out;
 
+	entry = qci_fm_find_entry(fmi->fm_id);
+	if (stc_cfg_flag && !entry)
+		goto out;
+
 	if (!strcmp(nodename, "ieee802-dot1q-qci-augment:flow-meter-enabled")) {
 		fmi->enable = value->data.bool_val;
 	} else if (!strcmp(nodename, "committed-information-rate")) {
 		fmi->fmconf.cir = value->data.uint64_val / 1000;
+		entry->cir = value->data.uint64_val;
 	} else if (!strcmp(nodename, "committed-burst-size")) {
 		fmi->fmconf.cbs = value->data.uint32_val;
+		entry->cbs = value->data.uint32_val;
 	} else if (!strcmp(nodename, "excess-information-rate")) {
 		fmi->fmconf.eir = value->data.uint64_val / 1000;
+		entry->eir = value->data.uint64_val;
 	} else if (!strcmp(nodename, "excess-burst-size")) {
 		fmi->fmconf.ebs = value->data.uint32_val;
+		entry->ebs = value->data.uint32_val;
 	} else if (!strcmp(nodename, "coupling-flag")) {
 		num_str = value->data.enum_val;
 		if (!strcmp(num_str, "zero")) {
@@ -124,6 +152,8 @@ int parse_qci_fm(sr_session_ctx_t *session, sr_val_t *value,
 		fmi->fmconf.mark_red_enable = value->data.bool_val;
 	}
 
+	para->set_flag = true;
+
 out:
 	return rc;
 }
@@ -144,6 +174,8 @@ int get_fm_per_port_per_id(sr_session_ctx_t *session, const char *path)
 	uint32_t fmid = 0;
 	struct std_qci_list *cur_node = NULL;
 	char fmid_bak[IF_NAME_MAX_LEN] = "unknown";
+	struct tc_qci_policer_para *para = &sqci_policer_para;
+	int cnt = 0;
 
 	rc = sr_get_changes_iter(session, path, &it);
 
@@ -179,6 +211,9 @@ int get_fm_per_port_per_id(sr_session_ctx_t *session, const char *path)
 		if (!cpname)
 			continue;
 
+		if (cnt < SUB_PARA_LEN)
+			para->entry[cnt++].id = fmid;
+
 		if (!fm_list_head) {
 			fm_list_head = new_list_node(QCI_T_FM, cpname, fmid);
 			if (!fm_list_head) {
@@ -207,6 +242,8 @@ int get_fm_per_port_per_id(sr_session_ctx_t *session, const char *path)
 			add_node2list(fm_list_head, cur_node);
 		}
 	}
+	para->entry_cnt = cnt;
+
 	if (rc == SR_ERR_NOT_FOUND)
 		rc = SR_ERR_OK;
 
@@ -384,9 +421,54 @@ int qci_fm_config(sr_session_ctx_t *session, const char *path, bool abort)
 	if (rc != SR_ERR_OK)
 		goto out;
 
-	rc = config_fm(session);
+	if (stc_cfg_flag)
+		rc = qci_check_parameter();
+	else
+		rc = config_fm(session);
 out:
 	return rc;
+}
+
+int qci_fm_get_para(char *buf, int len)
+{
+	struct tc_qci_policer_para *para = &sqci_policer_para;
+	struct tc_qci_policer_entry *entry = NULL;
+	char sub_buf[SUB_CMD_LEN];
+	uint32_t cir = 0;
+	int i = 0;
+
+	if (!para->set_flag || !buf || !len)
+		return 0;
+
+	for (i = 0; i < para->entry_cnt; i++) {
+		entry = para->entry + i;
+
+		snprintf(sub_buf, len, "action police index %d ", entry->id);
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+		if (entry->cir > MBPS) {
+			cir = entry->cir / MBPS;
+			snprintf(sub_buf, SUB_CMD_LEN, "rate %dmbit ", cir);
+		} else if (entry->cir > KBPS) {
+			cir = entry->cir / KBPS;
+			snprintf(sub_buf, SUB_CMD_LEN, "rate %dkbit ", cir);
+		} else {
+			cir = entry->cir;
+			snprintf(sub_buf, SUB_CMD_LEN, "rate %dbit ", cir);
+		}
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+		snprintf(sub_buf, SUB_CMD_LEN, "burst %d ", entry->cbs);
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+	}
+
+	return (int)strlen(buf);
+}
+
+int qci_fm_clear_para(void)
+{
+	memset(&sqci_policer_para, 0, sizeof(sqci_policer_para));
+	return 0;
 }
 
 int qci_fm_subtree_change_cb(sr_session_ctx_t *session, const char *path,
@@ -397,6 +479,15 @@ int qci_fm_subtree_change_cb(sr_session_ctx_t *session, const char *path,
 
 	snprintf(xpath, XPATH_MAX_LEN, "%s%s//*", BRIDGE_COMPONENT_XPATH,
 		 QCIFM_XPATH);
+
+#ifdef SYSREPO_TSN_TC
+	stc_cfg_flag = true;
+	qci_set_xpath(xpath);
+	qci_set_session(session);
+#else
+	stc_cfg_flag = false;
+#endif
+
 	switch (event) {
 	case SR_EV_VERIFY:
 		rc = qci_fm_config(session, xpath, false);

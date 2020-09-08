@@ -30,8 +30,18 @@
 #include "common.h"
 #include "main.h"
 #include "cb_streamid.h"
+#include "qci.h"
 
 struct std_cb_stream_list *stream_head;
+
+static bool stc_cfg_flag;
+static bool stc_qdisc_flag;
+static struct tc_qci_stream_para sqci_stream_para;
+
+char *get_interface_name(void)
+{
+	return sqci_stream_para.ifname;
+}
 
 struct std_cb_stream_list *new_stream_list_node(char *port, uint32_t index)
 {
@@ -276,6 +286,7 @@ void clr_cb_streamid(sr_session_ctx_t *session, sr_val_t *value,
 int parse_cb_streamid(sr_session_ctx_t *session, sr_val_t *value,
 		struct std_cb_stream *stream)
 {
+	struct tc_qci_stream_para *para = &sqci_stream_para;
 	int rc = SR_ERR_OK;
 	sr_xpath_ctx_t xp_ctx = {0};
 	uint8_t u8_val = 0;
@@ -292,6 +303,7 @@ int parse_cb_streamid(sr_session_ctx_t *session, sr_val_t *value,
 
 	if (!strcmp(nodename, "stream-id-enabled")) {
 		stream->enable = value->data.bool_val;
+		para->enable = value->data.bool_val;
 	} else if (!strcmp(nodename, "stream-handle")) {
 		stream->cbconf.handle = value->data.uint32_val;
 	} else if (!strcmp(nodename, "in-facing-output-port-list")) {
@@ -335,6 +347,7 @@ int parse_cb_streamid(sr_session_ctx_t *session, sr_val_t *value,
 			stream->cbconf.para.iid.dmac = u64_val;
 		else if (stream->cbconf.type == STREAMID_NULL)
 			stream->cbconf.para.nid.dmac = u64_val;
+		para->dmac = u64_val;
 	} else if (!strcmp(nodename, "source-address")) {
 		rc = parse_mac_address(value->data.string_val, &u64_val,
 				       err_msg, value->xpath);
@@ -344,6 +357,7 @@ int parse_cb_streamid(sr_session_ctx_t *session, sr_val_t *value,
 			goto out;
 		}
 		stream->cbconf.para.sid.smac = u64_val;
+		para->smac = u64_val;
 	} else if (!strcmp(nodename, "vlan-tagged")) {
 		rc = parse_vlan_tag(session, value, &u8_val);
 		if (rc != SR_ERR_OK)
@@ -361,6 +375,7 @@ int parse_cb_streamid(sr_session_ctx_t *session, sr_val_t *value,
 			stream->cbconf.para.sid.vid = u16_val;
 		else if (stream->cbconf.type == STREAMID_IP)
 			stream->cbconf.para.iid.vid = u16_val;
+		para->vid = u16_val;
 	} else if (!strcmp(nodename, "down-dest-address")) {
 		rc = parse_mac_address(value->data.string_val, &u64_val,
 				       err_msg, value->xpath);
@@ -410,6 +425,7 @@ int parse_cb_streamid(sr_session_ctx_t *session, sr_val_t *value,
 			rc = SR_ERR_INVAL_ARG;
 			goto out;
 		}
+		para->i4_addr.s_addr = i4_addr.s_addr;
 	} else if (!strcmp(nodename, "ipv6-address")) {
 		struct in6_addr i6_addr;
 
@@ -432,9 +448,13 @@ int parse_cb_streamid(sr_session_ctx_t *session, sr_val_t *value,
 			stream->cbconf.para.iid.npt = 3;
 	} else if (!strcmp(nodename, "source-port")) {
 		stream->cbconf.para.iid.dscp = value->data.uint16_val;
+		para->sport = value->data.uint16_val;
 	} else if (!strcmp(nodename, "dest-port")) {
 		stream->cbconf.para.iid.dscp = value->data.uint16_val;
+		para->dport = value->data.uint16_val;
 	}
+
+	para->set_flag = true;
 
 out:
 	return rc;
@@ -494,6 +514,8 @@ int get_streamid_per_port_per_id(sr_session_ctx_t *session, const char *path)
 					    "name", &xp_ctx_cp);
 		if (!cpname)
 			continue;
+
+		snprintf(sqci_stream_para.ifname, IF_NAME_MAX_LEN, "%s", cpname);
 
 		if (!stream_head) {
 			stream_head = new_stream_list_node(cpname,
@@ -577,6 +599,7 @@ int parse_streamid_per_port_per_id(sr_session_ctx_t *session, bool abort)
 	size_t i;
 	char err_msg[MSG_MAX_LEN] = {0};
 	struct std_cb_stream_list *cur_node = stream_head;
+	struct tc_qci_stream_para *para = &sqci_stream_para;
 	char xpath[XPATH_MAX_LEN] = {0,};
 
 	while (cur_node) {
@@ -606,6 +629,8 @@ int parse_streamid_per_port_per_id(sr_session_ctx_t *session, bool abort)
 				printf("WARN: %s was deleted, disable %s",
 				       xpath, "this Instance.\n");
 				cur_node->stream_ptr->enable = false;
+				para->enable = false;
+				para->set_flag = true;
 				rc = SR_ERR_OK;
 			} else {
 				printf("ERROR: %s sr_get_items: %s\n", __func__,
@@ -702,9 +727,130 @@ int cb_streamid_config(sr_session_ctx_t *session, const char *path, bool abort)
 	if (rc != SR_ERR_OK)
 		goto out;
 
-	rc = config_streamid(session);
+	if (stc_cfg_flag)
+		rc = qci_check_parameter();
+	else
+		rc = config_streamid(session);
+
 out:
 	return rc;
+}
+
+static inline void mac_u64_to_str(uint64_t mac, char *buf, int len)
+{
+	uint8_t macs[6];
+	int offset = 40;
+	int i = 0;
+
+	for (i = 0; i < 6; i++) {
+		macs[i] = (mac >> offset) & 0xFF;
+		offset -= 8;
+	}
+	snprintf(buf, len, "%02X:%02X:%02X:%02X:%02X:%02X ",
+		macs[0], macs[1], macs[2], macs[3], macs[4], macs[5]);
+}
+
+int cb_streamid_del_tc_config(char *buf, int len)
+{
+	struct tc_qci_stream_para *para = &sqci_stream_para;
+	char sub_buf[SUB_CMD_LEN];
+
+	snprintf(buf, len, "tc filter del dev %s ingress;", para->ifname);
+
+	snprintf(sub_buf, SUB_CMD_LEN, "tc qdisc del dev %s ingress;", para->ifname);
+	strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+	printf("cmd:%s\n", buf);
+	system(buf);
+
+	para->set_flag = false;
+	stc_qdisc_flag = false;
+
+	return 0;
+}
+
+int cb_streamid_get_para(char *buf, int len)
+{
+	struct tc_qci_stream_para *para = &sqci_stream_para;
+	char sub_buf[SUB_CMD_LEN];
+	uint16_t vid = 0;
+	int pri = 0;
+
+	if (!para->set_flag || !buf || !len)
+		return 0;
+
+	if (!para->enable)
+		return cb_streamid_del_tc_config(buf, len);
+
+	if (!stc_qdisc_flag) {
+		snprintf(sub_buf, SUB_CMD_LEN, "tc qdisc add dev %s ingress", para->ifname);
+		system(sub_buf);
+		stc_qdisc_flag = true;
+	}
+
+	snprintf(sub_buf, SUB_CMD_LEN, "tc filter del dev %s ingress;", para->ifname);
+	strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+	snprintf(sub_buf, SUB_CMD_LEN, "tc filter add dev %s ", para->ifname);
+	strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+	snprintf(sub_buf, SUB_CMD_LEN, "protocol 802.1Q parent ffff: flower skip_sw ");
+	strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+	if (para->dmac) {
+		strncat(buf, "dst_mac ", len - 1 - strlen(buf));
+		mac_u64_to_str(para->dmac, sub_buf, SUB_CMD_LEN);
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+	}
+
+	if (para->smac) {
+		strncat(buf, "src_mac ", len - 1 - strlen(buf));
+		mac_u64_to_str(para->dmac, sub_buf, SUB_CMD_LEN);
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+	}
+
+	if (para->dport) {
+		snprintf(sub_buf, SUB_CMD_LEN, "dst_port %d ", para->dport);
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+	}
+
+	if (para->sport) {
+		snprintf(sub_buf, SUB_CMD_LEN, "src_port %d ", para->sport);
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+	}
+
+	if (para->vid) {
+		if (para->vid < MAX_VLAN_ID) {
+			pri = 0;
+			vid = para->vid;
+		} else {
+			pri = (para->vid >> 13) & 0x07;
+			vid = para->vid & (MAX_VLAN_ID - 1);
+		}
+
+		if (vid > 0) {
+			snprintf(sub_buf, SUB_CMD_LEN, "vlan_id %d ", vid);
+			strncat(buf, sub_buf, len - 1 - strlen(buf));
+		}
+
+		if (pri > 0) {
+			snprintf(sub_buf, SUB_CMD_LEN, "vlan_prio %d ", pri);
+			strncat(buf, sub_buf, len - 1 - strlen(buf));
+		}
+	}
+
+	if (!para->dmac && !para->smac && !para->dport && !para->sport && !para->vid) {
+		snprintf(sub_buf, SUB_CMD_LEN, "matchall ");
+		strncat(buf, sub_buf, len - 1 - strlen(buf));
+	}
+
+	return (int)strlen(buf);
+}
+
+int cb_streamid_clear_para(void)
+{
+	memset(&sqci_stream_para, 0, sizeof(sqci_stream_para));
+	return 0;
 }
 
 /************************************************************************
@@ -720,6 +866,15 @@ int cb_streamid_subtree_change_cb(sr_session_ctx_t *session, const char *path,
 
 	snprintf(xpath, XPATH_MAX_LEN, "%s/%s:*//*", BRIDGE_COMPONENT_XPATH,
 		 CB_STREAMID_MODULE_NAME);
+
+#ifdef SYSREPO_TSN_TC
+	stc_cfg_flag = true;
+	qci_set_xpath(xpath);
+	qci_set_session(session);
+#else
+	stc_cfg_flag = false;
+#endif
+
 	switch (event) {
 	case SR_EV_VERIFY:
 		rc = cb_streamid_config(session, xpath, false);

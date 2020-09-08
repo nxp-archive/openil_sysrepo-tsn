@@ -144,6 +144,10 @@ int main(int argc, char **argv)
 	/* Init tsn mutex */
 	init_tsn_mutex();
 
+#ifdef SYSREPO_TSN_TC
+	qci_init_para();
+#endif
+
 	/* Connect to sysrepo */
 	rc = sr_connect("netconf-tsn", SR_CONN_DEFAULT, &connection);
 	if (rc != SR_ERR_OK) {
@@ -230,14 +234,6 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
-	/* Subscribe to CB-StreamID subtree */
-	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
-	strncat(path, CB_STREAMID_XPATH, XPATH_MAX_LEN - strlen(path));
-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
-	rc = sr_subtree_change_subscribe(session, path,
-					 cb_streamid_subtree_change_cb,
-					 NULL, 0, opts, &bridge_subscription);
-
 	/* Subscribe to QCI-Stream-Filter subtree */
 	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
 	strncat(path, QCISF_XPATH, XPATH_MAX_LEN - strlen(path));
@@ -260,6 +256,14 @@ int main(int argc, char **argv)
 	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
 	rc = sr_subtree_change_subscribe(session, path,
 					 qci_fm_subtree_change_cb,
+					 NULL, 0, opts, &bridge_subscription);
+
+	/* Subscribe to CB-StreamID subtree */
+	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
+	strncat(path, CB_STREAMID_XPATH, XPATH_MAX_LEN - strlen(path));
+	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+	rc = sr_subtree_change_subscribe(session, path,
+					 cb_streamid_subtree_change_cb,
 					 NULL, 0, opts, &bridge_subscription);
 
 	if (rc != SR_ERR_OK) {
