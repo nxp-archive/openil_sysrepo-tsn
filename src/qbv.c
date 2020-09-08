@@ -102,6 +102,7 @@ static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
 	int rc = SR_ERR_OK;
 	uint32_t clockid = 0;
 	uint32_t gate_mask = 0;
+	char *host_name = NULL;
 	uint32_t interval = 0;
 	uint64_t base_time = 0;
 	uint64_t cycle_time = 0;
@@ -113,13 +114,15 @@ static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
 	if (pqbv->admin.control_list_length == 0)
 		return rc;
 
-	tsn_config_del_qbv_by_tc(qbvconf, ifname);
+	host_name = get_host_name();
+	if (host_name && strstr(host_name, "IMX8MPEVK"))
+		num_tc = 5;
 
 	base_time = pqbv->admin.base_time;
 	cycle_time = pqbv->admin.cycle_time;
 	cycle_time_extension = pqbv->admin.cycle_time_extension;
 
-	snprintf(stc_cmd, MAX_CMD_LEN, "tc qdisc add ");
+	snprintf(stc_cmd, MAX_CMD_LEN, "tc qdisc replace ");
 
 	snprintf(stc_subcmd, MAX_CMD_LEN, "dev %s ", ifname);
 	strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
@@ -145,19 +148,17 @@ static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
 	}
 
 	if (base_time > 0) {
-		snprintf(stc_subcmd, MAX_CMD_LEN, "base-time %lld ", base_time);
+		snprintf(stc_subcmd, MAX_CMD_LEN, "base-time %" PRIu64 " ", base_time);
 		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
 	}
 
 	if (cycle_time > 0) {
-		snprintf(stc_subcmd, MAX_CMD_LEN, "cycle-time %lld ",
-				cycle_time);
+		snprintf(stc_subcmd, MAX_CMD_LEN, "cycle-time %" PRIu64 " ", cycle_time);
 		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
 	}
 
 	if (cycle_time_extension > 0) {
-		snprintf(stc_subcmd, MAX_CMD_LEN, "cycle-time-extension %lld ",
-				cycle_time_extension);
+		snprintf(stc_subcmd, MAX_CMD_LEN, "cycle-time-extension %" PRIu64 " ", cycle_time_extension);
 		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
 	}
 
@@ -181,7 +182,7 @@ static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
 	strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
 
 	sysret = system(stc_cmd);
-	if ((sysret != -1) && WIFEXITED(sysret) && (WEXITSTATUS(sysret) == 0)) {
+	if (SYSCALL_OK(sysret)) {
 		printf("ok. cmd:%s\n", stc_cmd);
 		snprintf(sif_name, IF_NAME_MAX_LEN, "%s", ifname);
 	} else {
@@ -209,11 +210,15 @@ int tsn_config_qbv(sr_session_ctx_t *session, char *ifname,
 		qbvconf->qbvconf_ptr->admin.cycle_time = time;
 	}
 
-	if (stc_cfg_flag)
-		return tsn_config_qbv_by_tc(session, ifname, qbvconf);
-
-	rc = tsn_qos_port_qbv_set(ifname, qbvconf->qbvconf_ptr,
+	if (stc_cfg_flag) {
+		if (qbvconf->qbv_en)
+			rc = tsn_config_qbv_by_tc(session, ifname, qbvconf);
+		else
+			rc = tsn_config_del_qbv_by_tc(qbvconf, ifname);
+	} else {
+		rc = tsn_qos_port_qbv_set(ifname, qbvconf->qbvconf_ptr,
 				  qbvconf->qbv_en);
+	}
 
 	if (rc < 0) {
 		snprintf(xpath, XPATH_MAX_LEN, "%s[name='%s']/%s:*//*",
@@ -243,10 +248,8 @@ void clr_qbv(sr_val_t *value, struct sr_qbv_conf *qbvconf)
 	if (!nodename)
 		return;
 
-	if (stc_cfg_flag && (strlen(sif_name) > 0)) {
-		tsn_config_del_qbv_by_tc(qbvconf, sif_name);
+	if (stc_cfg_flag && (strlen(sif_name) > 0))
 		memset(sif_name, 0, sizeof(sif_name));
-	}
 
 	if (!strcmp(nodename, "gate-enabled")) {
 		qbvconf->qbv_en = false;
@@ -487,8 +490,7 @@ int config_qbv_per_port(sr_session_ctx_t *session, char *path, bool abort,
 			goto cleanup;
 	}
 config_qbv:
-	if (!stc_cfg_flag)
-		init_tsn_socket();
+	init_tsn_socket();
 	rc = tsn_config_qbv(session, ifname, &qbvconf);
 	close_tsn_socket();
 

@@ -3,7 +3,7 @@
  * @author Xiaolin He
  * @brief header file for qbv.c.
  *
- * Copyright 2019 NXP
+ * Copyright 2019-2020 NXP
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@
 #include "common.h"
 
 #define QBV_TC_NUM (8)
-#define MAX_CMD_LEN (512)
-#define SUB_PARA_LEN (64)
 
 #define QBV_GATE_PARA_XPATH "/ieee802-dot1q-sched:gate-parameters"
 #define QBV_MAX_SDU_XPATH "/ieee802-dot1q-sched:max-sdu-table"
