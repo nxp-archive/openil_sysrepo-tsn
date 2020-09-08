@@ -62,6 +62,14 @@
 
 #define PRINT printf
 
+#define MAX_CMD_LEN		(512)
+#define SUB_CMD_LEN		(64)
+#define SUB_PARA_LEN		(64)
+#define MAX_VLAN_ID		(4096)
+
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define SYSCALL_OK(r) (((r) != -1) && WIFEXITED(r) && (WEXITSTATUS(r) == 0))
+
 enum apply_status {
 	APPLY_NONE = 0,
 	APPLY_PARSE_SUC,
@@ -105,4 +113,6 @@ void print_subtree_changes(sr_session_ctx_t *session, const char *path);
 int str_to_num(int type, char *str, uint64_t *num);
 void pri2num(char *pri_str, int8_t *pri_num);
 bool is_del_oper(sr_session_ctx_t *session, char *path);
+char *get_host_name(void);
+
 #endif
