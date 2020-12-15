@@ -374,7 +374,8 @@ int config_fm(sr_session_ctx_t *session)
 	struct std_qci_list *cur_node = fm_list_head;
 	char xpath[XPATH_MAX_LEN] = {0,};
 
-	init_tsn_socket();
+	if (!stc_cfg_flag)
+		init_tsn_socket();
 	while (cur_node) {
 		/* set new flow meter configuration */
 		rc = tsn_qci_psfp_fmi_set(cur_node->fm_ptr->port,
@@ -400,7 +401,8 @@ int config_fm(sr_session_ctx_t *session)
 	}
 
 cleanup:
-	close_tsn_socket();
+	if (!stc_cfg_flag)
+		close_tsn_socket();
 
 	return rc;
 }

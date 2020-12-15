@@ -490,9 +490,11 @@ int config_qbv_per_port(sr_session_ctx_t *session, char *path, bool abort,
 			goto cleanup;
 	}
 config_qbv:
-	init_tsn_socket();
+	if (!stc_cfg_flag)
+		init_tsn_socket();
 	rc = tsn_config_qbv(session, ifname, &qbvconf);
-	close_tsn_socket();
+	if (!stc_cfg_flag)
+		close_tsn_socket();
 
 cleanup:
 	free_qbv_memory(qbvconf.qbvconf_ptr);
