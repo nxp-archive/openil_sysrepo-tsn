@@ -343,7 +343,8 @@ int config_sf(sr_session_ctx_t *session)
 	struct std_qci_list *cur_node = sf_list_head;
 	char xpath[XPATH_MAX_LEN] = {0,};
 
-	init_tsn_socket();
+	if (!stc_cfg_flag)
+		init_tsn_socket();
 	while (cur_node) {
 		/* set new stream filters configuration */
 		rc = tsn_qci_psfp_sfi_set(cur_node->sf_ptr->port,
@@ -371,7 +372,8 @@ int config_sf(sr_session_ctx_t *session)
 	}
 
 cleanup:
-	close_tsn_socket();
+	if (!stc_cfg_flag)
+		close_tsn_socket();
 
 	return rc;
 }
