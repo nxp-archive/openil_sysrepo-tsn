@@ -756,8 +756,14 @@ int cb_streamid_del_tc_config(char *buf, int len)
 {
 	struct tc_qci_stream_para *para = &sqci_stream_para;
 	char sub_buf[SUB_CMD_LEN];
+	char *host_name = NULL;
+	char *chain_id = "";
 
-	snprintf(buf, len, "tc filter del dev %s ingress;", para->ifname);
+	host_name = get_host_name();
+	if (host_name && strstr(host_name, "LS1028ARDB"))
+		chain_id = " chain 30000 ";
+
+	snprintf(buf, len, "tc filter del dev %s ingress %s ;", para->ifname, chain_id);
 
 	snprintf(sub_buf, SUB_CMD_LEN, "tc qdisc del dev %s ingress;", para->ifname);
 	strncat(buf, sub_buf, len - 1 - strlen(buf));
@@ -775,6 +781,8 @@ int cb_streamid_get_para(char *buf, int len)
 {
 	struct tc_qci_stream_para *para = &sqci_stream_para;
 	char sub_buf[SUB_CMD_LEN];
+	char *host_name = NULL;
+	char *chain_id = "";
 	uint16_t vid = 0;
 	int pri = 0;
 
@@ -784,17 +792,23 @@ int cb_streamid_get_para(char *buf, int len)
 	if (!para->enable)
 		return cb_streamid_del_tc_config(buf, len);
 
+	host_name = get_host_name();
+	if (host_name && strstr(host_name, "LS1028ARDB"))
+		chain_id = " chain 30000 ";
+
 	if (!stc_qdisc_flag) {
 		snprintf(sub_buf, SUB_CMD_LEN, "tc qdisc add dev %s ingress", para->ifname);
 		system(sub_buf);
 		stc_qdisc_flag = true;
 	}
 
-	snprintf(sub_buf, SUB_CMD_LEN, "tc filter del dev %s ingress;", para->ifname);
+	snprintf(sub_buf, SUB_CMD_LEN, "tc filter del dev %s ingress %s ;", para->ifname, chain_id);
 	strncat(buf, sub_buf, len - 1 - strlen(buf));
 
-	snprintf(sub_buf, SUB_CMD_LEN, "tc filter add dev %s ", para->ifname);
+	snprintf(sub_buf, SUB_CMD_LEN, "tc filter add dev %s %s ", para->ifname, chain_id);
 	strncat(buf, sub_buf, len - 1 - strlen(buf));
+
+
 
 	snprintf(sub_buf, SUB_CMD_LEN, "protocol 802.1Q parent ffff: flower skip_sw ");
 	strncat(buf, sub_buf, len - 1 - strlen(buf));

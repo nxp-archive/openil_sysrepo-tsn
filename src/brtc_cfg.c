@@ -272,6 +272,9 @@ cleanup:
 
 static int set_config(sr_session_ctx_t *session, bool abort)
 {
+	char *host_name = NULL;
+	char *chain_id = "";
+	char *chain_next = "";
 	pid_t sysret = 0;
 	int rc = SR_ERR_OK;
 	struct item_cfg *conf = &sitem_conf;
@@ -292,6 +295,12 @@ static int set_config(sr_session_ctx_t *session, bool abort)
 			|| (strlen(conf->filter.ifname) == 0))
 		return rc;
 
+	host_name = get_host_name();
+	if (host_name && strstr(host_name, "LS1028ARDB")) {
+		chain_id = " chain 11000 ";
+		chain_next = " action goto chain 12000 ";
+	}
+
 	snprintf(stc_cmd, MAX_CMD_LEN, "tc qdisc %s dev %s %s\n",
 		conf->qdisc.action, conf->qdisc.ifname, conf->qdisc.block);
 	system(stc_cmd);
@@ -306,8 +315,8 @@ static int set_config(sr_session_ctx_t *session, bool abort)
 		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
 	}
 	if (strlen(conf->filter.protocol) > 0) {
-		snprintf(stc_subcmd, MAX_CMD_LEN, "protocol %s ",
-				conf->filter.protocol);
+		snprintf(stc_subcmd, MAX_CMD_LEN, "%s protocol %s ",
+				chain_id, conf->filter.protocol);
 		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
 	}
 	if (strlen(conf->filter.type) > 0) {
@@ -360,8 +369,8 @@ static int set_config(sr_session_ctx_t *session, bool abort)
 		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
 	}
 	if (strlen(conf->filter.action_spec) > 0) {
-		snprintf(stc_subcmd, MAX_CMD_LEN, "action %s ",
-				conf->filter.action_spec);
+		snprintf(stc_subcmd, MAX_CMD_LEN, "action %s %s ",
+				conf->filter.action_spec, chain_next);
 		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
 	}
 	sysret = system(stc_cmd);
