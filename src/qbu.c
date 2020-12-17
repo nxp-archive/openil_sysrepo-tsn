@@ -216,11 +216,9 @@ config_qbu:
 		else
 			return rc;
 	} else {
-		if (!stc_cfg_flag)
-			init_tsn_socket();
+		init_tsn_socket();
 		rc = tsn_qbu_set(ifname, pt_num);
-		if (!stc_cfg_flag)
-			close_tsn_socket();
+		close_tsn_socket();
 	}
 
 	if (rc < 0) {
